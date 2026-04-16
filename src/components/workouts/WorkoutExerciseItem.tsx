@@ -1,64 +1,38 @@
-import { ExerciseWithSets } from '@/types/models';
 import Card from '@/components/general/Card';
-import { View, Text } from '@/components/general/Themed';
-import { StyleSheet } from 'react-native';
+import { ExerciseWithSets } from '@/types/models';
 import { getBestSet } from '@/services/setService';
 import Colors from '@/constants/Colors';
 
-type WorkoutExerciseItem = {
+type WorkoutExerciseItemProps = {
   exercise: ExerciseWithSets;
 };
 
-export default function WorkoutExerciseItem({ exercise }: WorkoutExerciseItem) {
+export default function WorkoutExerciseItem({ exercise }: WorkoutExerciseItemProps) {
   const bestSet = getBestSet(exercise.sets);
 
   return (
     <Card title={exercise.name}>
       {exercise.sets.map((exerciseSet, index) => (
-        <View
+        <div
           key={exerciseSet.id}
-          style={[
-            styles.setRow,
-            {
-              backgroundColor:
-                exerciseSet.id === bestSet?.id
-                  ? Colors.dark.tint + '50'
-                  : 'transparent',
-            },
-          ]}
+          className="flex gap-4 p-2 rounded"
+          style={{
+            backgroundColor:
+              exerciseSet.id === bestSet?.id ? Colors.dark.tint + '50' : 'transparent',
+          }}
         >
-          <Text style={styles.setIndex}>{index + 1}</Text>
-          <Text style={styles.setInfo}>
+          <span className="text-base text-gray-400">{index + 1}</span>
+          <span className="text-base">
             {exerciseSet.reps}{' '}
             {exerciseSet.weight ? `x ${exerciseSet.weight} kg` : 'reps'}
-          </Text>
+          </span>
           {exerciseSet.oneRM && (
-            <Text style={styles.setOneRm}>
+            <span className="text-base font-bold ml-auto">
               {Math.floor(exerciseSet.oneRM)} kg
-            </Text>
+            </span>
           )}
-        </View>
+        </div>
       ))}
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  setRow: {
-    flexDirection: 'row',
-    gap: 15,
-    padding: 8,
-  },
-  setIndex: {
-    fontSize: 16,
-    color: 'gray',
-  },
-  setInfo: {
-    fontSize: 16,
-  },
-  setOneRm: {
-    fontSize: 16,
-    marginLeft: 'auto',
-    fontWeight: 'bold',
-  },
-});

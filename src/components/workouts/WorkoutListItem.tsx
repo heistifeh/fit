@@ -1,76 +1,56 @@
-import Card from '@/components/general/Card';
-import { View, Text } from '@/components/general/Themed';
-import { StyleSheet } from 'react-native';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { Link } from 'react-router-dom';
+import { Clock, Zap } from 'lucide-react';
 import { WorkoutWithExercises } from '@/types/models';
 import dayjs from 'dayjs';
-
-import { getBestSet } from '@/services/setService';
 import { getWorkoutTotalWeight } from '@/services/workoutService';
 import { calculateDuration } from '@/utils/time';
 
-type WorkoutListItem = {
+type WorkoutListItemProps = {
   workout: WorkoutWithExercises;
 };
 
-export default function WorkoutListItem({ workout }: WorkoutListItem) {
+export default function WorkoutListItem({ workout }: WorkoutListItemProps) {
+  const totalWeight = getWorkoutTotalWeight(workout);
+  const duration    = calculateDuration(workout.createdAt, workout.finishedAt);
+
+  const preview   = workout.exercises.slice(0, 3).map((e) => e.name).join(' · ');
+  const remaining = workout.exercises.length - 3;
+
   return (
-    <Card
-      title={dayjs(workout.createdAt).format('HH:mm dddd, D MMM')}
-      href={`/workout/${workout.id}`}
-      style={{ gap: 8 }}
-    >
-      <View style={styles.row}>
-        <Text style={styles.label}>Exercise</Text>
-        <Text style={styles.label}>Best set</Text>
-      </View>
+    <Link to={`/workout/${workout.id}`} className="block active:opacity-70 transition-opacity">
+      <div className="bg-gray-50 dark:bg-zinc-900 rounded-2xl p-4">
 
-      {workout.exercises.map((exercise) => {
-        const bestSet = getBestSet(exercise.sets);
-        return (
-          <View key={exercise.id} style={styles.row}>
-            <Text style={{ color: 'gray' }}>
-              {exercise.sets.length} x {exercise.name}
-            </Text>
-            {bestSet && (
-              <Text style={{ color: 'gray' }}>
-                {bestSet.reps}{' '}
-                {bestSet.weight ? `x ${bestSet.weight} kg` : 'reps'}
-              </Text>
-            )}
-          </View>
-        );
-      })}
+        {/* Date + duration */}
+        <div className="flex items-center justify-between mb-2">
+          <p className="font-bold text-[15px]">
+            {dayjs(workout.createdAt).format('ddd, D MMM')}
+          </p>
+          <span className="flex items-center gap-1 text-xs text-gray-400 font-medium">
+            <Clock size={12} />
+            {duration}
+          </span>
+        </div>
 
-      {/* Footer */}
-      <View style={styles.footer}>
-        <Text>
-          <FontAwesome5 name="clock" size={16} color="gray" />{' '}
-          {calculateDuration(workout.createdAt, workout.finishedAt)}
-        </Text>
-        <Text>
-          <FontAwesome5 name="weight-hanging" size={16} color="gray" />{' '}
-          {getWorkoutTotalWeight(workout)} kg
-        </Text>
-      </View>
-    </Card>
+        {/* Exercise preview */}
+        <p className="text-sm text-gray-500 mb-3 leading-snug">
+          {preview || 'No exercises'}
+          {remaining > 0 && (
+            <span className="text-tint dark:text-tint-dark font-semibold"> +{remaining} more</span>
+          )}
+        </p>
+
+        {/* Stat pills */}
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1 bg-white dark:bg-zinc-800 rounded-full px-2.5 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300">
+            <Zap size={11} className="text-tint dark:text-tint-dark" />
+            {totalWeight.toLocaleString()} kg
+          </span>
+          <span className="flex items-center gap-1 bg-white dark:bg-zinc-800 rounded-full px-2.5 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300">
+            {workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+      </div>
+    </Link>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  label: {
-    fontWeight: 'bold',
-  },
-  footer: {
-    flexDirection: 'row',
-    gap: 20,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#333',
-    marginTop: 10,
-    paddingTop: 10,
-  },
-});

@@ -1,42 +1,28 @@
-import { Link } from 'expo-router';
-import React from 'react';
-import { StyleSheet, Pressable, StyleProp, ViewStyle } from 'react-native';
-import { View, Text, useThemeColor } from '@/components/general/Themed';
+import { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 
 type CardProps = {
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
   href?: string;
-  style?: StyleProp<ViewStyle>;
+  className?: string;
 };
 
-export default function Card({ title, children, href, style }: CardProps) {
-  const tint = useThemeColor({}, 'tint');
-  const cardContent = (
-    <View style={[styles.card, { borderLeftColor: tint }, style]}>
-      <Text style={styles.title}>{title}</Text>
+export default function Card({ title, children, href, className = '' }: CardProps) {
+  const content = (
+    <div className={`p-4 border-l-2 border-tint dark:border-tint-dark bg-gray-50 dark:bg-zinc-900 rounded-r-lg shadow-sm ${className}`}>
+      <p className="text-[17px] font-bold mb-2">{title}</p>
       {children}
-    </View>
+    </div>
   );
 
   if (href) {
     return (
-      <Link href={href} asChild>
-        <Pressable>{cardContent}</Pressable>
+      <Link to={href} className="block active:opacity-70 transition-opacity">
+        {content}
       </Link>
     );
   }
-  return cardContent;
-}
 
-const styles = StyleSheet.create({
-  card: {
-    padding: 16,
-    borderLeftWidth: 2,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-});
+  return content;
+}

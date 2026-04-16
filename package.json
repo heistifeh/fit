@@ -1,41 +1,32 @@
 {
-  "name": "fitness",
+  "name": "fitnex",
   "version": "1.0.0",
-  "main": "expo-router/entry",
+  "type": "module",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
     "dayjs": "^1.11.13",
-    "drizzle-orm": "^0.45.2",
-    "expo": "^54.0.33",
-    "expo-constants": "~18.0.13",
-    "expo-crypto": "~15.0.8",
-    "expo-drizzle-studio-plugin": "^0.2.1",
-    "expo-linking": "~8.0.11",
-    "expo-router": "~6.0.23",
-    "expo-sqlite": "~16.0.10",
-    "expo-status-bar": "~3.0.9",
+    "html2canvas": "^1.4.1",
     "immer": "^11.1.4",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "react-native": "0.81.5",
-    "react-native-gesture-handler": "~2.28.0",
-    "react-native-safe-area-context": "~5.6.0",
-    "react-native-screens": "~4.16.0",
-    "react-native-web": "^0.21.0",
+    "lucide-react": "^0.460.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^6.28.0",
+    "recharts": "^3.8.1",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0",
     "@types/react": "^19.1.0",
-    "babel-plugin-inline-import": "^3.0.0",
-    "drizzle-kit": "^0.31.10",
-    "tempy": "^3.2.0",
-    "typescript": "^5.1.3"
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.5"
   },
   "private": true
 }

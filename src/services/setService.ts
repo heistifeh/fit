@@ -1,5 +1,4 @@
-import * as Crypto from 'expo-crypto';
-import { ExerciseSet } from "@/types/models";
+import { ExerciseSet } from '@/types/models';
 
 export const getBestSet = (sets: ExerciseSet[]) => {
   return sets.reduce((bestSet: ExerciseSet | null, set) => {
@@ -11,40 +10,23 @@ export const getSetTotalWeight = (set: ExerciseSet) => {
   return (set.weight || 0) * (set.reps || 0);
 };
 
-export const createSet = (exerciseId: string) => {
-  const newSet: ExerciseSet = {
-    id: Crypto.randomUUID(),
-    exerciseId,
-  };
-
-  return newSet;
+export const createSet = (exerciseId: string): ExerciseSet => {
+  return { id: crypto.randomUUID(), exerciseId };
 };
 
 export const updateSet = (
   set: ExerciseSet,
-  updatedFields: Pick<ExerciseSet, "reps" | "weight">,
-) => {
+  updatedFields: Pick<ExerciseSet, 'reps' | 'weight'>
+): ExerciseSet => {
   const updatedSet = { ...set };
-  if (updatedFields.reps !== undefined) {
-    updatedSet.reps = updatedFields.reps;
-  }
-  if (updatedFields.weight !== undefined) {
-    updatedSet.weight = updatedFields.weight;
-  }
-
+  if (updatedFields.reps !== undefined) updatedSet.reps = updatedFields.reps;
+  if (updatedFields.weight !== undefined) updatedSet.weight = updatedFields.weight;
   if (updatedSet.weight && updatedSet.reps) {
-    updatedSet.oneRM = Math.round(
-      updatedSet.weight * (36.0 / (37.0 - updatedSet.reps)),
-    );
+    updatedSet.oneRM = Math.round(updatedSet.weight * (36.0 / (37.0 - updatedSet.reps)));
   }
-
   return updatedSet;
 };
 
-// A set is considered complete if it has a valid number of reps (greater than 0)
-const isComplete = (set: ExerciseSet) => {
-  return set.reps && set.reps > 0;
-};
-export const cleanSets = (sets: ExerciseSet[]) => {
-  return sets.filter(isComplete);
-};
+const isComplete = (set: ExerciseSet) => !!(set.reps && set.reps > 0);
+
+export const cleanSets = (sets: ExerciseSet[]) => sets.filter(isComplete);

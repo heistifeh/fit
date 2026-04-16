@@ -1,73 +1,53 @@
-import { ComponentProps, forwardRef, ReactNode } from 'react';
-import {
-  StyleSheet,
-  View,
-  StyleProp,
-  ViewStyle,
-  Pressable,
-} from 'react-native';
-import { Text, useThemeColor } from '@/components/general/Themed';
+import { ReactNode, ButtonHTMLAttributes } from 'react';
 
-type CustomButton = {
-  rightIcon?: ReactNode;
+type CustomButtonProps = {
   title: string;
-  style?: StyleProp<ViewStyle>;
-  type?: 'primary' | 'outline' | 'link';
+  rightIcon?: ReactNode;
+  variant?: 'primary' | 'outline' | 'link';
   color?: string;
-} & ComponentProps<typeof Pressable>;
+  className?: string;
+} & ButtonHTMLAttributes<HTMLButtonElement>;
 
-const CustomButton = forwardRef<View, CustomButton>(
-  (
-    { rightIcon, title, style, type = 'primary', color, ...pressableProps },
-    ref
-  ) => {
-    const tint = color || useThemeColor({}, 'tint');
+export default function CustomButton({
+  title,
+  rightIcon,
+  variant = 'primary',
+  color,
+  className = '',
+  ...buttonProps
+}: CustomButtonProps) {
+  const baseClasses = 'relative flex items-center justify-center w-full min-h-[52px] py-4 font-semibold text-base tracking-wide rounded-xl transition-opacity hover:opacity-90 active:scale-[0.98] active:opacity-90 disabled:opacity-50';
 
-    return (
-      <Pressable
-        ref={ref}
-        {...pressableProps}
-        style={[
-          styles.button,
-          type === 'outline' && { borderColor: tint, borderWidth: 2 },
-          type === 'primary' && { backgroundColor: tint },
-          type === 'link' && { backgroundColor: 'transparent' },
-          style,
-        ]}
-      >
-        <Text
-          style={[
-            styles.buttonText,
-            type === 'outline' && { color: tint },
-            type === 'link' && { color: tint },
-          ]}
-        >
-          {title}
-        </Text>
-        <View style={styles.rightIconContainer}>{rightIcon}</View>
-      </Pressable>
-    );
-  }
-);
+  const variantClasses = {
+    primary: color
+      ? `text-white`
+      : 'bg-tint dark:bg-tint-dark text-white dark:text-gray-900',
+    outline: color
+      ? `border-2 bg-transparent`
+      : 'border-2 border-tint dark:border-tint-dark text-tint dark:text-tint-dark bg-transparent',
+    link: color
+      ? `bg-transparent`
+      : 'bg-transparent text-tint dark:text-tint-dark',
+  };
 
-const styles = StyleSheet.create({
-  button: {
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 20,
-    width: '100%',
-  },
-  buttonText: {
-    color: 'black',
-    fontWeight: '600',
-    fontSize: 16,
-    letterSpacing: 0.5,
-  },
-  rightIconContainer: {
-    position: 'absolute',
-    right: 20,
-  },
-});
+  const inlineStyle = color
+    ? {
+        ...(variant === 'primary' && { backgroundColor: color }),
+        ...(variant === 'outline' && { borderColor: color, color }),
+        ...(variant === 'link' && { color }),
+      }
+    : undefined;
 
-export default CustomButton;
+  return (
+    <button
+      {...buttonProps}
+      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
+      style={inlineStyle}
+    >
+      {title}
+      {rightIcon && (
+        <span className="absolute right-5">{rightIcon}</span>
+      )}
+    </button>
+  );
+}
