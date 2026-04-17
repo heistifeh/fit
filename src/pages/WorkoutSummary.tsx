@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import useStore from '@/store';
 import {
   Clock, Dumbbell, CheckSquare, Share2, Check, Save,
 } from 'lucide-react';
@@ -82,11 +83,16 @@ export default function WorkoutSummary() {
 
   const [showShare, setShowShare] = useState(false);
 
+  const endWorkout     = useStore((s) => s.endWorkout);
+  const discardWorkout = useStore((s) => s.discardWorkout);
+
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleSave = () => {
+    endWorkout();
     if (onSave) { onSave(); } else { navigate('/'); }
   };
   const handleDiscard = () => {
+    discardWorkout();
     if (onDiscard) { onDiscard(); } else { navigate('/'); }
   };
 

@@ -78,7 +78,8 @@ export default function SplashScreen() {
           minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          padding: '52px 28px 40px',
+          padding: '52px 28px 0',
+          paddingBottom: 'max(40px, env(safe-area-inset-bottom, 24px))',
         }}
       >
         {/* ── Brand row ────────────────────────────────────────────────── */}
@@ -200,7 +201,7 @@ export default function SplashScreen() {
                 fontSize: 16,
                 padding: '17px 0',
                 borderRadius: 16,
-                border: '1px solid #1a1a1a',
+                border: '1.5px solid rgba(255,255,255,0.15)',
                 cursor: 'pointer',
               }}
             >

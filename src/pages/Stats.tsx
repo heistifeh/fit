@@ -7,6 +7,8 @@ import {
 import {
   screenEnter, staggerContainer, staggerChild, SPRING,
 } from '@/animations/fitnex.variants';
+import { usePreferences } from '@/context/PreferencesContext';
+import { formatWeight } from '@/utils/weight';
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
@@ -69,18 +71,19 @@ function TrendBadge({ value }: { value: string }) {
 
 // ─── Custom tooltip ───────────────────────────────────────────────────────────
 
-function ChartTooltip({ active, payload, label }: {
+function ChartTooltip({ active, payload, label, weightUnit }: {
   active?: boolean;
   payload?: { name: string; value: number; color: string }[];
   label?: string;
+  weightUnit: 'kg' | 'lbs';
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-gray-100 rounded-xl px-3 py-2 shadow-lg text-[12px]">
-      <p className="font-bold text-gray-700 mb-1">{label}</p>
+    <div className="bg-white dark:bg-[#111] border border-gray-100 dark:border-[#1a1a1a] rounded-xl px-3 py-2 shadow-lg text-[12px]">
+      <p className="font-bold text-gray-700 dark:text-gray-200 mb-1">{label}</p>
       {payload.map((p) => (
         <p key={p.name} style={{ color: p.color }} className="font-semibold">
-          {p.name === 'thisWeek' ? 'This week' : 'Last week'}: {p.value > 0 ? `${p.value} kg` : '—'}
+          {p.name === 'thisWeek' ? 'This week' : 'Last week'}: {p.value > 0 ? formatWeight(p.value, weightUnit) : '—'}
         </p>
       ))}
     </div>
@@ -91,6 +94,7 @@ function ChartTooltip({ active, payload, label }: {
 
 export default function Stats() {
   const [activePeriod, setActivePeriod] = useState('Week');
+  const { weightUnit } = usePreferences();
 
   return (
     <motion.div
@@ -102,8 +106,8 @@ export default function Stats() {
     >
 
       {/* ── 1. Header ─────────────────────────────────────────────────────── */}
-      <header className="bg-white border-b border-gray-100 px-5 pt-12 pb-0">
-        <h1 className="text-[28px] font-black leading-tight tracking-tight mb-4">Stats</h1>
+      <header className="bg-white dark:bg-[#111] border-b border-gray-100 dark:border-[#1a1a1a] px-5 pt-12 pb-0">
+        <h1 className="text-[28px] font-black leading-tight tracking-tight mb-4 dark:text-white">Stats</h1>
 
         {/* Period pills */}
         <div className="flex gap-2 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none' }}>
@@ -114,7 +118,7 @@ export default function Stats() {
               className={`shrink-0 px-4 py-1.5 rounded-full text-[13px] font-semibold border transition-colors ${
                 activePeriod === p
                   ? 'bg-tint text-white border-tint'
-                  : 'bg-white text-gray-500 border-gray-200'
+                  : 'bg-white dark:bg-[#1a1a1a] text-gray-500 dark:text-[#555] border-gray-200 dark:border-[#333]'
               }`}
               whileTap={{ scale: 0.96 }}
             >
@@ -136,43 +140,42 @@ export default function Stats() {
         >
 
           {/* Total volume */}
-          <motion.div variants={staggerChild} className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
+          <motion.div variants={staggerChild} className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-4">
             <div className="flex items-start justify-between mb-3">
               <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                 <Dumbbell size={15} className="text-tint" />
               </div>
               <TrendBadge value={overviewStats.volumeTrend} />
             </div>
-            <p className="text-[24px] font-black leading-none tabular-nums">
-              {overviewStats.totalVolume.toLocaleString()}
-              <span className="text-[14px] font-bold text-gray-400 ml-0.5">kg</span>
+            <p className="text-[24px] font-black leading-none tabular-nums dark:text-white">
+              {formatWeight(overviewStats.totalVolume, weightUnit)}
             </p>
             <p className="text-[12px] text-gray-400 font-medium mt-1">Total volume</p>
           </motion.div>
 
           {/* Workouts */}
-          <motion.div variants={staggerChild} className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
+          <motion.div variants={staggerChild} className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-4">
             <div className="flex items-start justify-between mb-3">
               <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                 <Calendar size={15} className="text-tint" />
               </div>
               <TrendBadge value={overviewStats.sessionsTrend} />
             </div>
-            <p className="text-[24px] font-black leading-none tabular-nums">
+            <p className="text-[24px] font-black leading-none tabular-nums dark:text-white">
               {overviewStats.sessions}
             </p>
             <p className="text-[12px] text-gray-400 font-medium mt-1">Workouts</p>
           </motion.div>
 
           {/* Avg duration */}
-          <motion.div variants={staggerChild} className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
+          <motion.div variants={staggerChild} className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-4">
             <div className="flex items-start justify-between mb-3">
               <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                 <Clock size={15} className="text-tint" />
               </div>
               <TrendBadge value={overviewStats.durationTrend} />
             </div>
-            <p className="text-[24px] font-black leading-none tabular-nums">
+            <p className="text-[24px] font-black leading-none tabular-nums dark:text-white">
               {overviewStats.avgDuration}
               <span className="text-[14px] font-bold text-gray-400 ml-0.5">m avg</span>
             </p>
@@ -180,7 +183,7 @@ export default function Stats() {
           </motion.div>
 
           {/* Streak */}
-          <motion.div variants={staggerChild} className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
+          <motion.div variants={staggerChild} className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-4">
             <div className="flex items-start justify-between mb-3">
               <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center text-lg leading-none">
                 🔥
@@ -204,8 +207,8 @@ export default function Stats() {
           initial="initial"
           animate="animate"
         >
-          <p className="text-[16px] font-bold mb-3">Volume this week</p>
-          <div className="bg-white rounded-2xl border border-[#f0f0f0] pt-4 pb-2 px-2">
+          <p className="text-[16px] font-bold mb-3 dark:text-white">Volume this week</p>
+          <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] pt-4 pb-2 px-2">
 
             {/* Legend */}
             <div className="flex items-center gap-4 px-3 mb-3">
@@ -241,7 +244,7 @@ export default function Stats() {
                 />
 
                 <Tooltip
-                  content={<ChartTooltip />}
+                  content={<ChartTooltip weightUnit={weightUnit} />}
                   cursor={{ stroke: '#f0f0f0', strokeWidth: 1 }}
                 />
 
@@ -277,8 +280,8 @@ export default function Stats() {
           initial="initial"
           animate="animate"
         >
-          <p className="text-[16px] font-bold mb-3">Muscle groups</p>
-          <div className="bg-white rounded-2xl border border-[#f0f0f0] px-4 py-3 flex flex-col gap-4">
+          <p className="text-[16px] font-bold mb-3 dark:text-white">Muscle groups</p>
+          <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-3 flex flex-col gap-4">
             {muscleGroups.map((mg, idx) => {
               const color = barColor(mg.pct);
               return (
@@ -286,7 +289,7 @@ export default function Stats() {
                   <span className="text-xl w-7 shrink-0 text-center">{mg.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[13px] font-semibold text-gray-700">{mg.name}</span>
+                      <span className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">{mg.name}</span>
                       <span className="text-[12px] font-bold" style={{ color }}>{mg.pct}%</span>
                     </div>
                     <div className="h-[6px] bg-[#f0f0f0] rounded-full overflow-hidden">
@@ -312,28 +315,28 @@ export default function Stats() {
           initial="initial"
           animate="animate"
         >
-          <p className="text-[16px] font-bold mb-3">Personal Records</p>
+          <p className="text-[16px] font-bold mb-3 dark:text-white">Personal Records</p>
           <div className="flex flex-col gap-3">
             {personalRecords.map((pr) => (
               <motion.div
                 key={pr.exercise}
                 variants={staggerChild}
-                className="bg-white rounded-2xl border border-[#f0f0f0] px-4 py-3.5 flex items-center gap-3"
+                className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-3.5 flex items-center gap-3"
               >
                 <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center text-xl shrink-0">
                   🏆
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-[14px] leading-snug">{pr.exercise}</p>
+                  <p className="font-bold text-[14px] leading-snug dark:text-white">{pr.exercise}</p>
                   <p className="text-[12px] text-gray-400 mt-0.5">
                     {pr.date} · {pr.reps} reps
                   </p>
                 </div>
 
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  <p className="font-black text-[16px] text-gray-900 tabular-nums">
-                    {pr.kg} kg
+                  <p className="font-black text-[16px] text-gray-900 dark:text-white tabular-nums">
+                    {formatWeight(pr.kg, weightUnit)}
                   </p>
                   <span className="text-[11px] font-bold text-tint bg-tint-muted px-2 py-0.5 rounded-full">
                     {pr.improvement}

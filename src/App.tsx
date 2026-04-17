@@ -1,6 +1,7 @@
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuthContext } from '@/context/AuthContext';
+import { PreferencesProvider } from '@/context/PreferencesContext';
 import Layout from '@/components/general/Layout';
 import SplashScreen   from '@/pages/auth/SplashScreen';
 import SignUpScreen   from '@/pages/auth/SignUpScreen';
@@ -64,8 +65,10 @@ function AuthGate() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AuthGate />
-    </AuthProvider>
+    <PreferencesProvider>
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
+    </PreferencesProvider>
   );
 }

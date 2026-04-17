@@ -14,6 +14,7 @@ type State = {
 type Actions = {
   startWorkout: () => void;
   endWorkout: () => void;
+  discardWorkout: () => void;
   addExercise: (name: string) => void;
   removeExercise: (exerciseId: string) => void;
   addSet: (exerciseId: string) => void;
@@ -54,6 +55,10 @@ const useStore = create<State & Actions>()(
             state.workouts.unshift(finished);
           }
         });
+      },
+
+      discardWorkout: () => {
+        set({ currentWorkout: null });
       },
 
       removeExercise: (exerciseId: string) => {

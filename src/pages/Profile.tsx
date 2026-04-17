@@ -8,6 +8,25 @@ import {
   screenEnter, staggerContainer, staggerChild, press, overlayFade, sheetSlide,
 } from '@/animations/fitnex.variants';
 import { useAuthContext } from '@/context/AuthContext';
+import { usePreferences } from '@/context/PreferencesContext';
+import type { WeightUnit } from '@/utils/weight';
+
+// ─── Rest timer presets ───────────────────────────────────────────────────────
+
+const REST_PRESETS = [
+  { label: '30s',  secs: 30  },
+  { label: '45s',  secs: 45  },
+  { label: '60s',  secs: 60  },
+  { label: '90s',  secs: 90  },
+  { label: '2m',   secs: 120 },
+  { label: '3m',   secs: 180 },
+];
+
+const fmtRestSecs = (s: number): string => {
+  if (s < 60) return `${s}s`;
+  if (s % 60 === 0) return `${s / 60}m`;
+  return `${Math.floor(s / 60)}m ${s % 60}s`;
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,20 +60,20 @@ function SettingsRow({
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={`text-[14px] font-semibold leading-snug ${danger ? 'text-[#ef4444]' : 'text-gray-900'}`}>
+        <p className={`text-[14px] font-semibold leading-snug ${danger ? 'text-[#ef4444]' : 'text-gray-900 dark:text-white'}`}>
           {label}
         </p>
         {sublabel && (
-          <p className="text-[12px] text-gray-400 mt-0.5 leading-snug">{sublabel}</p>
+          <p className="text-[12px] text-gray-400 dark:text-[#555] mt-0.5 leading-snug">{sublabel}</p>
         )}
       </div>
 
       {rightElement ?? (
         <div className="flex items-center gap-1.5 shrink-0">
           {rightValue && (
-            <span className="text-[13px] font-semibold text-gray-400">{rightValue}</span>
+            <span className="text-[13px] font-semibold text-gray-400 dark:text-[#555]">{rightValue}</span>
           )}
-          {!danger && <ChevronRight size={16} className="text-gray-300" />}
+          {!danger && <ChevronRight size={16} className="text-gray-300 dark:text-[#333]" />}
         </div>
       )}
     </motion.button>
@@ -82,7 +101,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[12px] font-bold text-gray-400 uppercase tracking-[0.06em] mb-2 px-1">
+    <p className="text-[12px] font-bold text-gray-400 dark:text-[#555] uppercase tracking-[0.06em] mb-2 px-1">
       {children}
     </p>
   );
@@ -91,7 +110,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 // ─── Divider ──────────────────────────────────────────────────────────────────
 
 function Divider() {
-  return <div className="mx-4 h-px bg-[#f8f9fa]" />;
+  return <div className="mx-4 h-px bg-[#f8f9fa] dark:bg-[#1a1a1a]" />;
 }
 
 // ─── Confirm sheet ────────────────────────────────────────────────────────────
@@ -123,23 +142,19 @@ function ConfirmSheet({
             onClick={onCancel}
           />
           <motion.div
-            className="relative bg-white rounded-t-2xl w-full px-5 pb-8"
+            className="relative bg-white dark:bg-[#111] rounded-t-2xl w-full px-5 pb-8"
             style={{ maxWidth: 390, marginLeft: 'auto', marginRight: 'auto' }}
             variants={sheetSlide}
             initial="initial"
             animate="animate"
             exit="exit"
           >
-            {/* Handle */}
             <div className="flex justify-center pt-3 mb-5">
-              <div className="w-9 h-1 bg-gray-200 rounded-full" />
+              <div className="w-9 h-1 bg-gray-200 dark:bg-[#333] rounded-full" />
             </div>
-
-            <p className="text-[18px] font-black text-gray-900 mb-1.5">{title}</p>
+            <p className="text-[18px] font-black text-gray-900 dark:text-white mb-1.5">{title}</p>
             <p className="text-[14px] text-gray-400 font-medium leading-relaxed mb-6">{subtitle}</p>
-
             <div className="flex flex-col gap-3">
-              {/* Cancel = teal (prominent) */}
               <motion.button
                 onClick={onCancel}
                 className="w-full py-[16px] rounded-2xl font-black text-white text-[16px]"
@@ -148,16 +163,57 @@ function ConfirmSheet({
               >
                 {cancelLabel}
               </motion.button>
-
-              {/* Confirm = destructive */}
               <motion.button
                 onClick={onConfirm}
-                className="w-full py-[15px] rounded-2xl font-semibold text-[15px] border border-gray-200 bg-white text-[#ef4444]"
+                className="w-full py-[15px] rounded-2xl font-semibold text-[15px] border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-[#ef4444]"
                 whileTap={press.whileTap}
               >
                 {confirmLabel}
               </motion.button>
             </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ─── Sheet wrapper ────────────────────────────────────────────────────────────
+
+function BottomSheet({
+  open, onClose, title, children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-[60] flex flex-col justify-end">
+          <motion.div
+            className="absolute inset-0"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+            variants={overlayFade}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            onClick={onClose}
+          />
+          <motion.div
+            className="relative bg-white dark:bg-[#111] rounded-t-2xl w-full px-5 pb-10"
+            style={{ maxWidth: 390, marginLeft: 'auto', marginRight: 'auto' }}
+            variants={sheetSlide}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <div className="flex justify-center pt-3 mb-5">
+              <div className="w-9 h-1 bg-gray-200 dark:bg-[#333] rounded-full" />
+            </div>
+            <p className="text-[18px] font-black text-gray-900 dark:text-white mb-5">{title}</p>
+            {children}
           </motion.div>
         </div>
       )}
@@ -182,10 +238,25 @@ export default function Profile() {
   const { mode, setMode, signOut } = useAuthContext();
   const isGuest = mode === 'guest';
 
-  const [darkMode,            setDarkMode]            = useState(false);
-  const [reminders,           setReminders]           = useState(true);
-  const [showLogoutConfirm,   setShowLogoutConfirm]   = useState(false);
+  const {
+    weightUnit, setWeightUnit,
+    restTimerSecs, setRestTimerSecs,
+    darkMode, setDarkMode,
+    reminders, setReminders,
+  } = usePreferences();
+
+  const [showLogoutConfirm,    setShowLogoutConfirm]    = useState(false);
   const [showExitGuestConfirm, setShowExitGuestConfirm] = useState(false);
+  const [showWeightUnitSheet,  setShowWeightUnitSheet]  = useState(false);
+  const [showRestTimerSheet,   setShowRestTimerSheet]   = useState(false);
+  const [customRest,           setCustomRest]           = useState('');
+  const [showCustomRest,       setShowCustomRest]       = useState(false);
+  const [toast,                setToast]                = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('nudgeDismissed');
@@ -196,6 +267,31 @@ export default function Profile() {
   const handleExitGuest = () => {
     localStorage.removeItem('nudgeDismissed');
     signOut();
+  };
+
+  const handleRemindersToggle = () => {
+    const next = !reminders;
+    if (next) {
+      Notification.requestPermission().then((permission) => {
+        if (permission !== 'granted') {
+          showToast('Enable notifications in your browser settings');
+          return;
+        }
+        setReminders(true);
+      });
+    } else {
+      setReminders(false);
+    }
+  };
+
+  const handleCustomRest = () => {
+    const secs = parseInt(customRest, 10);
+    if (!isNaN(secs) && secs > 0) {
+      setRestTimerSecs(secs);
+      setShowRestTimerSheet(false);
+      setShowCustomRest(false);
+      setCustomRest('');
+    }
   };
 
   return (
@@ -209,18 +305,14 @@ export default function Profile() {
       >
 
         {/* ── 1. Hero Header ──────────────────────────────────────────────── */}
-        <header className="bg-white border-b border-gray-100 px-5 pt-12 pb-6">
+        <header className="bg-white dark:bg-[#111] border-b border-gray-100 dark:border-[#1a1a1a] px-5 pt-12 pb-6">
           {isGuest ? (
-            /* Guest state header */
             <div className="flex flex-col items-center">
-              {/* Gray avatar with user icon */}
-              <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+              <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center mb-3">
                 <User size={32} className="text-gray-400" />
               </div>
-              <h1 className="text-[20px] font-black leading-tight">Guest user</h1>
+              <h1 className="text-[20px] font-black leading-tight dark:text-white">Guest user</h1>
               <p className="text-[13px] text-gray-400 mt-0.5 mb-5">Your progress isn't being saved</p>
-
-              {/* CTA buttons */}
               <motion.button
                 onClick={() => setMode('signup')}
                 className="w-full py-[15px] rounded-2xl font-black text-white text-[15px] mb-2"
@@ -237,7 +329,6 @@ export default function Profile() {
               </button>
             </div>
           ) : (
-            /* Authenticated state header */
             <div className="flex flex-col items-center">
               <div className="relative mb-3">
                 <div
@@ -250,25 +341,23 @@ export default function Profile() {
                   <Pencil size={10} className="text-white" strokeWidth={2.5} />
                 </button>
               </div>
-              <h1 className="text-[20px] font-black leading-tight">Tife</h1>
+              <h1 className="text-[20px] font-black leading-tight dark:text-white">Tife</h1>
               <p className="text-[13px] text-gray-400 mt-0.5">Member since January 2025</p>
-
-              {/* Stats row */}
               <div className="flex items-center mt-5 w-full">
                 <div className="flex-1 flex flex-col items-center gap-0.5">
-                  <span className="text-[20px] font-black tabular-nums leading-tight">148</span>
+                  <span className="text-[20px] font-black tabular-nums leading-tight dark:text-white">148</span>
                   <span className="text-[11px] text-gray-400 font-medium">Workouts</span>
                 </div>
-                <div className="w-px h-8 bg-gray-100" />
+                <div className="w-px h-8 bg-gray-100 dark:bg-[#1a1a1a]" />
                 <div className="flex-1 flex flex-col items-center gap-0.5">
-                  <span className="text-[20px] font-black tabular-nums leading-tight flex items-center gap-1">
+                  <span className="text-[20px] font-black tabular-nums leading-tight flex items-center gap-1 dark:text-white">
                     🔥 12
                   </span>
                   <span className="text-[11px] text-gray-400 font-medium">Streak</span>
                 </div>
-                <div className="w-px h-8 bg-gray-100" />
+                <div className="w-px h-8 bg-gray-100 dark:bg-[#1a1a1a]" />
                 <div className="flex-1 flex flex-col items-center gap-0.5">
-                  <span className="text-[20px] font-black tabular-nums leading-tight">42,600</span>
+                  <span className="text-[20px] font-black tabular-nums leading-tight dark:text-white">42,600</span>
                   <span className="text-[11px] text-gray-400 font-medium">kg lifted</span>
                 </div>
               </div>
@@ -285,18 +374,17 @@ export default function Profile() {
         >
 
           {isGuest ? (
-            /* ── Guest: locked state card (replaces Badges + Goals) ──────── */
             <motion.div variants={staggerChild}>
               <motion.button
                 onClick={() => setMode('signup')}
-                className="w-full bg-white rounded-2xl border border-[#f0f0f0] px-4 py-5 flex items-center gap-3 text-left"
+                className="w-full bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-5 flex items-center gap-3 text-left"
                 whileTap={press.whileTap}
               >
-                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center shrink-0">
                   <Lock size={18} className="text-gray-400" />
                 </div>
                 <div>
-                  <p className="font-bold text-[14px] text-gray-800 leading-snug">
+                  <p className="font-bold text-[14px] text-gray-800 dark:text-white leading-snug">
                     Create an account to unlock
                   </p>
                   <p className="text-[12px] text-gray-400 mt-0.5 leading-snug">
@@ -310,7 +398,7 @@ export default function Profile() {
             <>
               {/* ── 2. Badges ─────────────────────────────────────────────── */}
               <motion.div variants={staggerChild}>
-                <p className="text-[16px] font-bold mb-3">Badges</p>
+                <p className="text-[16px] font-bold mb-3 dark:text-white">Badges</p>
                 <motion.div
                   className="flex gap-2.5 overflow-x-auto"
                   style={{ scrollbarWidth: 'none' } as React.CSSProperties}
@@ -322,11 +410,11 @@ export default function Profile() {
                     <motion.div
                       key={badge.name}
                       variants={staggerChild}
-                      className="shrink-0 w-20 bg-white rounded-2xl border border-[#f0f0f0] py-3 flex flex-col items-center gap-1.5"
+                      className="shrink-0 w-20 bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] py-3 flex flex-col items-center gap-1.5"
                       style={{ opacity: badge.locked ? 0.4 : 1 }}
                     >
                       <span className="text-2xl leading-none">{badge.emoji}</span>
-                      <span className="text-[10px] text-gray-500 font-medium text-center leading-snug px-1">
+                      <span className="text-[10px] text-gray-500 dark:text-[#555] font-medium text-center leading-snug px-1">
                         {badge.name}
                       </span>
                     </motion.div>
@@ -338,7 +426,7 @@ export default function Profile() {
               <motion.div variants={staggerChild}>
                 <SectionLabel>Goals</SectionLabel>
                 <motion.div
-                  className="bg-white rounded-2xl border border-[#f0f0f0] overflow-hidden"
+                  className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] overflow-hidden"
                   variants={staggerContainer}
                   initial="initial"
                   animate="animate"
@@ -367,11 +455,11 @@ export default function Profile() {
             </>
           )}
 
-          {/* ── Preferences (shown for all users) ─────────────────────────── */}
+          {/* ── Preferences ───────────────────────────────────────────────── */}
           <motion.div variants={staggerChild}>
             <SectionLabel>Preferences</SectionLabel>
             <motion.div
-              className="bg-white rounded-2xl border border-[#f0f0f0] overflow-hidden"
+              className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] overflow-hidden"
               variants={staggerContainer}
               initial="initial"
               animate="animate"
@@ -381,7 +469,8 @@ export default function Profile() {
                   iconBg="#dbeafe"
                   icon={<Dumbbell size={16} className="text-blue-500" />}
                   label="Weight unit"
-                  rightValue="kg"
+                  rightValue={weightUnit}
+                  onClick={() => setShowWeightUnitSheet(true)}
                 />
               </motion.div>
               <Divider />
@@ -390,7 +479,8 @@ export default function Profile() {
                   iconBg="#d1fae5"
                   icon={<Clock size={16} className="text-tint" />}
                   label="Default rest timer"
-                  rightValue="90s"
+                  rightValue={fmtRestSecs(restTimerSecs)}
+                  onClick={() => { setShowCustomRest(false); setShowRestTimerSheet(true); }}
                 />
               </motion.div>
               <Divider />
@@ -399,7 +489,7 @@ export default function Profile() {
                   iconBg="#ede9fe"
                   icon={<Coffee size={16} className="text-purple-500" />}
                   label="Dark mode"
-                  rightElement={<Toggle on={darkMode} onToggle={() => setDarkMode((v) => !v)} />}
+                  rightElement={<Toggle on={darkMode} onToggle={() => setDarkMode(!darkMode)} />}
                 />
               </motion.div>
               <Divider />
@@ -408,17 +498,17 @@ export default function Profile() {
                   iconBg="#fef3c7"
                   icon={<Bell size={16} className="text-amber-500" />}
                   label="Workout reminders"
-                  rightElement={<Toggle on={reminders} onToggle={() => setReminders((v) => !v)} />}
+                  rightElement={<Toggle on={reminders} onToggle={handleRemindersToggle} />}
                 />
               </motion.div>
             </motion.div>
           </motion.div>
 
-          {/* ── Account ──────────────────────────────────────────────────────── */}
+          {/* ── Account ───────────────────────────────────────────────────── */}
           <motion.div variants={staggerChild}>
             <SectionLabel>Account</SectionLabel>
             <motion.div
-              className="bg-white rounded-2xl border border-[#f0f0f0] overflow-hidden"
+              className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] overflow-hidden"
               variants={staggerContainer}
               initial="initial"
               animate="animate"
@@ -444,8 +534,6 @@ export default function Profile() {
                   <Divider />
                 </>
               )}
-
-              {/* Log out (authenticated) / Exit guest mode (guest) */}
               <motion.div variants={staggerChild}>
                 <SettingsRow
                   iconBg="#fee2e2"
@@ -463,6 +551,114 @@ export default function Profile() {
 
         </motion.div>
       </motion.div>
+
+      {/* ── Weight unit sheet ─────────────────────────────────────────────────── */}
+      <BottomSheet
+        open={showWeightUnitSheet}
+        onClose={() => setShowWeightUnitSheet(false)}
+        title="Weight unit"
+      >
+        <div className="flex flex-col gap-3">
+          {(['kg', 'lbs'] as WeightUnit[]).map((unit) => {
+            const selected = weightUnit === unit;
+            return (
+              <motion.button
+                key={unit}
+                onClick={() => { setWeightUnit(unit); setShowWeightUnitSheet(false); }}
+                className="w-full flex items-center justify-between px-4 py-4 rounded-2xl border transition-colors"
+                style={{
+                  backgroundColor: selected ? '#f0fdf4' : 'transparent',
+                  borderColor: selected ? '#10B981' : '#e5e7eb',
+                }}
+                whileTap={press.whileTap}
+              >
+                <span className={`text-[15px] font-bold ${selected ? 'text-tint' : 'text-gray-800 dark:text-white'}`}>
+                  {unit === 'kg' ? 'Kilograms (kg)' : 'Pounds (lbs)'}
+                </span>
+                <div
+                  className="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0"
+                  style={{ borderColor: selected ? '#10B981' : '#d1d5db' }}
+                >
+                  {selected && <div className="w-2.5 h-2.5 rounded-full bg-tint" />}
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+      </BottomSheet>
+
+      {/* ── Rest timer sheet ──────────────────────────────────────────────────── */}
+      <BottomSheet
+        open={showRestTimerSheet}
+        onClose={() => setShowRestTimerSheet(false)}
+        title="Default rest timer"
+      >
+        <div className="grid grid-cols-3 gap-2.5 mb-4">
+          {REST_PRESETS.map(({ label, secs }) => {
+            const selected = restTimerSecs === secs && !showCustomRest;
+            return (
+              <motion.button
+                key={secs}
+                onClick={() => {
+                  setRestTimerSecs(secs);
+                  setShowCustomRest(false);
+                  setShowRestTimerSheet(false);
+                }}
+                className="py-3 rounded-2xl text-[14px] font-bold border transition-colors"
+                style={{
+                  backgroundColor: selected ? '#10B981' : 'transparent',
+                  borderColor: selected ? '#10B981' : '#e5e7eb',
+                  color: selected ? '#ffffff' : '#374151',
+                }}
+                whileTap={press.whileTap}
+              >
+                {label}
+              </motion.button>
+            );
+          })}
+          <motion.button
+            onClick={() => setShowCustomRest(true)}
+            className="py-3 rounded-2xl text-[14px] font-bold border transition-colors"
+            style={{
+              backgroundColor: showCustomRest ? '#10B981' : 'transparent',
+              borderColor: showCustomRest ? '#10B981' : '#e5e7eb',
+              color: showCustomRest ? '#ffffff' : '#374151',
+            }}
+            whileTap={press.whileTap}
+          >
+            Custom
+          </motion.button>
+        </div>
+
+        <AnimatePresence>
+          {showCustomRest && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              className="flex gap-2"
+            >
+              <input
+                type="number"
+                placeholder="Seconds"
+                value={customRest}
+                onChange={(e) => setCustomRest(e.target.value)}
+                className="flex-1 px-4 py-3 rounded-2xl border border-gray-200 dark:border-[#333] bg-[#f8f9fa] dark:bg-[#1a1a1a] text-gray-900 dark:text-white text-[15px] font-semibold outline-none focus:border-tint"
+                onKeyDown={(e) => e.key === 'Enter' && handleCustomRest()}
+                autoFocus
+              />
+              <motion.button
+                onClick={handleCustomRest}
+                className="px-5 py-3 rounded-2xl font-bold text-white text-[14px]"
+                style={{ backgroundColor: '#10B981' }}
+                whileTap={press.whileTap}
+              >
+                Set
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </BottomSheet>
 
       {/* ── Logout confirm sheet ─────────────────────────────────────────────── */}
       <ConfirmSheet
@@ -485,6 +681,20 @@ export default function Profile() {
         onConfirm={() => { setShowExitGuestConfirm(false); handleExitGuest(); }}
         onCancel={() => setShowExitGuestConfirm(false)}
       />
+
+      {/* ── Toast ────────────────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="fixed bottom-[100px] left-1/2 -translate-x-1/2 z-[70] bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[13px] font-semibold px-4 py-2.5 rounded-2xl shadow-lg whitespace-nowrap"
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

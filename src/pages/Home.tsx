@@ -8,11 +8,16 @@ import { WorkoutWithExercises } from '@/types/models';
 import {
   screenEnter, staggerContainer, staggerChild, press,
 } from '@/animations/fitnex.variants';
+import { usePreferences } from '@/context/PreferencesContext';
+import { formatWeight, fmtWeightNum } from '@/utils/weight';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-const fmtKg = (kg: number) =>
-  kg >= 1000 ? `${(kg / 1000).toFixed(1)}k` : String(kg);
+// Compact abbreviation for the stats card (e.g. "42.6k")
+const fmtKgCompact = (kg: number, unit: 'kg' | 'lbs') => {
+  const v = unit === 'lbs' ? kg * 2.2046 : kg;
+  return v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(Math.round(v));
+};
 
 const getStreak = (workouts: WorkoutWithExercises[]) => {
   if (!workouts.length) return 0;
@@ -52,6 +57,7 @@ export default function Home() {
   const currentWorkout = useStore((s) => s.currentWorkout);
   const startWorkout   = useStore((s) => s.startWorkout);
   const workouts       = useStore((s) => s.workouts);
+  const { weightUnit } = usePreferences();
 
   const onStart = () => { startWorkout(); navigate('/workout/current'); };
 
@@ -83,16 +89,16 @@ export default function Home() {
       exit={{ opacity: 0, transition: { duration: 0.15 } }}
     >
       {/* ── 1. Header ───────────────────────────────────────────────────── */}
-      <header className="bg-white px-5 pt-12 pb-4 flex items-start justify-between">
+      <header className="bg-white dark:bg-[#111] px-5 pt-12 pb-4 flex items-start justify-between">
         <div>
           <p className="text-sm text-gray-400 leading-none mb-1">Welcome back,</p>
-          <h1 className="text-[28px] font-black leading-tight tracking-tight">Tife 👋</h1>
+          <h1 className="text-[28px] font-black leading-tight tracking-tight dark:text-white">Tife 👋</h1>
         </div>
         <motion.button
-          className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center mt-1"
+          className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center mt-1"
           whileTap={press.whileTap}
         >
-          <Bell size={19} className="text-gray-500" />
+          <Bell size={19} className="text-gray-500 dark:text-[#555]" />
         </motion.button>
       </header>
 
@@ -108,7 +114,7 @@ export default function Home() {
           {/* Sessions */}
           <motion.div
             variants={staggerChild}
-            className="bg-white rounded-2xl p-4 border border-[#f0f0f0] flex flex-col items-center gap-0.5"
+            className="bg-white dark:bg-[#111] rounded-2xl p-4 border border-[#f0f0f0] dark:border-[#1a1a1a] flex flex-col items-center gap-0.5"
           >
             <span className="text-[28px] font-black leading-none text-tint tabular-nums">
               {workouts.length}
@@ -119,11 +125,11 @@ export default function Home() {
           {/* Volume */}
           <motion.div
             variants={staggerChild}
-            className="bg-white rounded-2xl p-4 border border-[#f0f0f0] flex flex-col items-center gap-0.5"
+            className="bg-white dark:bg-[#111] rounded-2xl p-4 border border-[#f0f0f0] dark:border-[#1a1a1a] flex flex-col items-center gap-0.5"
           >
-            <span className="text-[28px] font-black leading-none text-gray-900 tabular-nums">
-              {fmtKg(totalVolume)}
-              <span className="text-base font-bold">kg</span>
+            <span className="text-[28px] font-black leading-none text-gray-900 dark:text-white tabular-nums">
+              {fmtKgCompact(totalVolume, weightUnit)}
+              <span className="text-base font-bold">{weightUnit}</span>
             </span>
             <span className="text-[11px] text-gray-400 font-medium">lifted</span>
           </motion.div>
@@ -131,9 +137,9 @@ export default function Home() {
           {/* Streak */}
           <motion.div
             variants={staggerChild}
-            className="bg-white rounded-2xl p-4 border border-[#f0f0f0] flex flex-col items-center gap-0.5"
+            className="bg-white dark:bg-[#111] rounded-2xl p-4 border border-[#f0f0f0] dark:border-[#1a1a1a] flex flex-col items-center gap-0.5"
           >
-            <span className="text-[28px] font-black leading-none text-gray-900 tabular-nums flex items-center gap-1">
+            <span className="text-[28px] font-black leading-none text-gray-900 dark:text-white tabular-nums flex items-center gap-1">
               {streak}
               {streak >= 2 && <Flame size={18} className="text-orange-400 mb-0.5" />}
             </span>
@@ -144,7 +150,7 @@ export default function Home() {
         {/* ── 3. Weekly day strip ───────────────────────────────────────── */}
         <motion.div
           variants={staggerChild}
-          className="bg-white rounded-2xl border border-[#f0f0f0] px-4 py-3"
+          className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-3"
         >
           <div className="grid grid-cols-7">
             {weekDays.map(({ day, isToday, isPast, hasWorkout }, i) => (
@@ -180,10 +186,10 @@ export default function Home() {
         {/* ── 4. Workout progress chart ─────────────────────────────────── */}
         <motion.div
           variants={staggerChild}
-          className="bg-white rounded-2xl border border-[#f0f0f0] p-4"
+          className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-4"
         >
           <div className="flex items-center justify-between mb-4">
-            <p className="font-bold text-[15px]">Workout Progress</p>
+            <p className="font-bold text-[15px] dark:text-white">Workout Progress</p>
             <span className="bg-tint-muted text-tint text-[11px] font-semibold px-3 py-1 rounded-full">
               Weekly
             </span>
@@ -260,14 +266,14 @@ export default function Home() {
                 return (
                   <motion.div key={workout.id} variants={staggerChild} whileTap={press.whileTap}>
                     <Link to={`/workout/${workout.id}`} className="block">
-                      <div className="bg-white rounded-2xl border border-[#f0f0f0] px-4 py-3.5 flex items-center gap-3 active:opacity-70 transition-opacity">
+                      <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-3.5 flex items-center gap-3 active:opacity-70 transition-opacity">
                         <div className="w-11 h-11 rounded-xl bg-tint-muted flex items-center justify-center text-xl shrink-0">
                           {emoji}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-[14px] leading-snug truncate">{name}</p>
+                          <p className="font-bold text-[14px] leading-snug truncate dark:text-white">{name}</p>
                           <p className="text-[12px] text-gray-400 mt-0.5">
-                            {vol > 0 ? `${vol.toLocaleString()}kg` : '—'} · {workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}
+                            {vol > 0 ? formatWeight(vol, weightUnit) : '—'} · {workout.exercises.length} exercise{workout.exercises.length !== 1 ? 's' : ''}
                           </p>
                           <div className="mt-2 h-[3px] bg-gray-100 rounded-full overflow-hidden">
                             <div

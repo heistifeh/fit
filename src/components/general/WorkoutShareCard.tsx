@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { X, Download } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { X, Download, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import { overlayFade, sheetSlide, prBurst, press } from '@/animations/fitnex.variants';
@@ -21,6 +21,8 @@ export type ShareCardProps = {
   onClose: () => void;
 };
 
+type BackgroundType = 'dark' | 'gradient' | 'teal-dark' | 'photo';
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function getPercentile(volume: number): number {
@@ -29,6 +31,30 @@ function getPercentile(volume: number): number {
   if (volume >= 700)  return 15;
   if (volume >= 400)  return 35;
   return 60;
+}
+
+function getCardBg(bgType: BackgroundType, bgPhotoUrl: string | null): React.CSSProperties {
+  switch (bgType) {
+    case 'gradient':
+      return { background: 'linear-gradient(160deg, #0a0a0a 0%, #0a0a0a 40%, #064e3b 75%, #0d9e6e 100%)' };
+    case 'teal-dark':
+      return { background: '#042f23' };
+    case 'photo':
+      return bgPhotoUrl ? {
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.7)), url(${bgPhotoUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      } : { background: '#080808' };
+    default:
+      return { background: '#080808' };
+  }
+}
+
+// The dot notch on the progress bar needs to match the bg
+function getDotBorder(bgType: BackgroundType): string {
+  if (bgType === 'teal-dark') return '#042f23';
+  if (bgType === 'gradient') return '#0a0a0a';
+  return '#080808';
 }
 
 // X SVG logo
@@ -40,7 +66,14 @@ function XLogo({ size = 16 }: { size?: number }) {
   );
 }
 
-// ─── Exportable dark card ─────────────────────────────────────────────────────
+// ─── Exportable card ──────────────────────────────────────────────────────────
+
+type ShareCardInternalProps = ShareCardProps & {
+  cardRef: React.RefObject<HTMLDivElement | null>;
+  weeklyRankPct: number;
+  cardBgStyle: React.CSSProperties;
+  dotBorderColor: string;
+};
 
 function ShareCard({
   cardRef,
@@ -48,7 +81,9 @@ function ShareCard({
   durationMinutes, totalVolume, totalSets,
   streak, hasPR, prExercise, prKg, prReps,
   weeklyRankPct,
-}: ShareCardProps & { cardRef: React.RefObject<HTMLDivElement | null>; weeklyRankPct: number }) {
+  cardBgStyle,
+  dotBorderColor,
+}: ShareCardInternalProps) {
 
   const fillPct = Math.min(95, Math.max(5, 100 - weeklyRankPct));
   const streakDots = Array.from({ length: 10 }, (_, i) => i < streak ? 'orange' : 'dark');
@@ -57,12 +92,13 @@ function ShareCard({
     <div
       ref={cardRef}
       style={{
-        backgroundColor: '#080808',
+        ...cardBgStyle,
         borderRadius: 22,
         overflow: 'hidden',
         maxWidth: 400,
         width: '100%',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        transition: 'background 0.3s ease, background-image 0.3s ease',
       }}
     >
       {/* ── Header row ──────────────────────────────────────────────────── */}
@@ -73,7 +109,7 @@ function ShareCard({
             FITNEX
           </span>
         </div>
-        <span style={{ color: '#444', fontSize: 12, fontWeight: 500 }}>{date}</span>
+        <span style={{ color: '#ffffffaa', fontSize: 12, fontWeight: 500 }}>{date}</span>
       </div>
 
       {/* ── Rank section ────────────────────────────────────────────────── */}
@@ -89,14 +125,14 @@ function ShareCard({
             {weeklyRankPct}%
           </span>
         </div>
-        <p style={{ color: '#555', fontSize: 12, fontWeight: 500, marginTop: 2 }}>
+        <p style={{ color: '#ffffffbb', fontSize: 12, fontWeight: 500, marginTop: 2 }}>
           of all Fitnex users · this week
         </p>
       </div>
 
       {/* ── Progress bar ────────────────────────────────────────────────── */}
       <div style={{ padding: '12px 24px 20px' }}>
-        <div style={{ position: 'relative', width: '100%', height: 6, backgroundColor: '#1a1a1a', borderRadius: 3 }}>
+        <div style={{ position: 'relative', width: '100%', height: 6, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 3 }}>
           <div style={{
             position: 'absolute', left: 0, top: 0, height: '100%',
             width: `${fillPct}%`,
@@ -110,18 +146,18 @@ function ShareCard({
             width: 12, height: 12,
             borderRadius: '50%',
             backgroundColor: '#10B981',
-            border: '2px solid #080808',
+            border: `2px solid ${dotBorderColor}`,
           }} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-          <span style={{ color: '#444', fontSize: 10, fontWeight: 600 }}>Bottom</span>
+          <span style={{ color: '#ffffff66', fontSize: 10, fontWeight: 600 }}>Bottom</span>
           <span style={{ color: '#10B981', fontSize: 10, fontWeight: 700 }}>You are here</span>
-          <span style={{ color: '#444', fontSize: 10, fontWeight: 600 }}>Top</span>
+          <span style={{ color: '#ffffff66', fontSize: 10, fontWeight: 600 }}>Top</span>
         </div>
       </div>
 
       {/* ── Stats row ───────────────────────────────────────────────────── */}
-      <div style={{ borderTop: '1px solid #111', borderBottom: '1px solid #111', display: 'flex' }}>
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex' }}>
         {[
           { value: `${totalVolume.toLocaleString()}kg`, label: 'Volume' },
           { value: `${durationMinutes}m`,               label: 'Duration' },
@@ -136,13 +172,13 @@ function ShareCard({
               flexDirection: 'column',
               alignItems: 'center',
               gap: 4,
-              borderRight: i < arr.length - 1 ? '1px solid #111' : 'none',
+              borderRight: i < arr.length - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
             }}
           >
             <span style={{ color: '#ffffff', fontSize: 22, fontWeight: 900, letterSpacing: '-0.5px', lineHeight: 1 }}>
               {stat.value}
             </span>
-            <span style={{ color: '#444', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <span style={{ color: '#ffffff88', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               {stat.label}
             </span>
           </div>
@@ -151,7 +187,7 @@ function ShareCard({
 
       {/* ── PR section (conditional) ────────────────────────────────────── */}
       {hasPR && (
-        <div style={{ margin: '16px 24px 0', backgroundColor: '#0f0f0f', borderRadius: 12, border: '1px solid #1a1a1a', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ margin: '16px 24px 0', backgroundColor: 'rgba(0,0,0,0.35)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ minWidth: 0 }}>
             <p style={{ color: '#f59e0b', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
               New personal record
@@ -164,7 +200,7 @@ function ShareCard({
             <p style={{ color: '#ffffff', fontSize: 28, fontWeight: 900, letterSpacing: '-1px', lineHeight: 1 }}>
               {prKg}kg
             </p>
-            <p style={{ color: '#555', fontSize: 11, fontWeight: 600, marginTop: 3 }}>
+            <p style={{ color: '#ffffff99', fontSize: 11, fontWeight: 600, marginTop: 3 }}>
               {prReps} reps
             </p>
           </div>
@@ -172,7 +208,7 @@ function ShareCard({
       )}
 
       {/* ── Streak section ──────────────────────────────────────────────── */}
-      <div style={{ padding: '14px 24px', borderTop: hasPR ? '1px solid #111' : 'none', marginTop: hasPR ? 16 : 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ padding: '14px 24px', borderTop: hasPR ? '1px solid rgba(255,255,255,0.08)' : 'none', marginTop: hasPR ? 16 : 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: 4 }}>
             {streakDots.map((type, i) => (
@@ -180,7 +216,7 @@ function ShareCard({
                 key={i}
                 style={{
                   width: 8, height: 8, borderRadius: '50%',
-                  backgroundColor: type === 'orange' ? '#f97316' : '#1a1a1a',
+                  backgroundColor: type === 'orange' ? '#f97316' : 'rgba(255,255,255,0.12)',
                 }}
               />
             ))}
@@ -200,11 +236,11 @@ function ShareCard({
       </div>
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
-      <div style={{ padding: '12px 24px 20px', borderTop: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <p style={{ color: '#555', fontSize: 12, fontWeight: 500 }}>
+      <div style={{ padding: '12px 24px 20px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <p style={{ color: '#ffffffaa', fontSize: 12, fontWeight: 500 }}>
           by <span style={{ color: '#10B981', fontWeight: 700 }}>{handle}</span>
         </p>
-        <p style={{ color: '#2a2a2a', fontSize: 12, fontWeight: 600 }}>fitnex.app</p>
+        <p style={{ color: '#ffffff33', fontSize: 12, fontWeight: 600 }}>fitnex.app</p>
       </div>
     </div>
   );
@@ -237,25 +273,103 @@ function Step({ n, text }: { n: number; text: string }) {
   );
 }
 
+// ─── Background picker ────────────────────────────────────────────────────────
+
+type BgOptionProps = {
+  selected: boolean;
+  onClick: () => void;
+  style: React.CSSProperties;
+  children?: React.ReactNode;
+};
+
+function BgOption({ selected, onClick, style, children }: BgOptionProps) {
+  return (
+    <motion.button
+      onClick={onClick}
+      whileTap={press.whileTap}
+      style={{
+        width: 56, height: 56,
+        borderRadius: 12,
+        border: selected ? '2.5px solid #10B981' : '2px solid #333',
+        flexShrink: 0,
+        overflow: 'hidden',
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'border-color 0.2s',
+        ...style,
+      }}
+    >
+      {children}
+    </motion.button>
+  );
+}
+
 // ─── Main overlay component ───────────────────────────────────────────────────
 
 export default function WorkoutShareCard(props: ShareCardProps) {
   const { onClose, handle, date, durationMinutes, totalVolume, totalSets,
           streak, hasPR, prExercise, prKg, prReps } = props;
 
-  const cardRef       = useRef<HTMLDivElement>(null);
+  const cardRef     = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [saving,           setSaving]           = useState(false);
   const [isGenerating,     setIsGenerating]     = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [bgType,           setBgType]           = useState<BackgroundType>('dark');
+  const [bgPhotoUrl,       setBgPhotoUrl]       = useState<string | null>(null);
 
   const weeklyRankPct = getPercentile(totalVolume);
+
+  // Revoke object URL on unmount to avoid memory leaks
+  useEffect(() => {
+    return () => { if (bgPhotoUrl) URL.revokeObjectURL(bgPhotoUrl); };
+  }, [bgPhotoUrl]);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (bgPhotoUrl) URL.revokeObjectURL(bgPhotoUrl);
+    const url = URL.createObjectURL(file);
+    setBgPhotoUrl(url);
+    setBgType('photo');
+    // Reset input so the same file can be re-selected
+    e.target.value = '';
+  };
+
+  const handlePhotoTileClick = () => {
+    if (!bgPhotoUrl || bgType !== 'photo') {
+      // No photo yet, or photo isn't active — open picker or activate
+      if (!bgPhotoUrl) {
+        fileInputRef.current?.click();
+      } else {
+        setBgType('photo');
+      }
+    } else {
+      // Already showing photo — tap again to replace
+      fileInputRef.current?.click();
+    }
+  };
+
+  const removePhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (bgPhotoUrl) URL.revokeObjectURL(bgPhotoUrl);
+    setBgPhotoUrl(null);
+    setBgType('dark');
+  };
+
+  const cardBgStyle   = getCardBg(bgType, bgPhotoUrl);
+  const dotBorderColor = getDotBorder(bgType);
 
   const generateAndDownload = async (filename: string) => {
     if (!cardRef.current) return;
     const canvas = await html2canvas(cardRef.current, {
       scale: 3,
-      backgroundColor: '#080808',
-      useCORS: true,
+      backgroundColor: null,
+      useCORS: bgType !== 'photo',
+      allowTaint: bgType === 'photo',
       logging: false,
     });
     const link = document.createElement('a');
@@ -372,8 +486,75 @@ export default function WorkoutShareCard(props: ShareCardProps) {
               prReps={prReps}
               weeklyRankPct={weeklyRankPct}
               onClose={onClose}
+              cardBgStyle={cardBgStyle}
+              dotBorderColor={dotBorderColor}
             />
           </motion.div>
+
+          {/* ── Background picker ────────────────────────────────────────── */}
+          <div className="px-4 pb-5 shrink-0">
+            <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-3">
+              Background
+            </p>
+            <div className="flex gap-3">
+
+              {/* Dark */}
+              <BgOption
+                selected={bgType === 'dark'}
+                onClick={() => setBgType('dark')}
+                style={{ backgroundColor: '#080808' }}
+              />
+
+              {/* Teal gradient */}
+              <BgOption
+                selected={bgType === 'gradient'}
+                onClick={() => setBgType('gradient')}
+                style={{ background: 'linear-gradient(160deg, #0a0a0a 60%, #0d9e6e 100%)' }}
+              />
+
+              {/* Teal dark */}
+              <BgOption
+                selected={bgType === 'teal-dark'}
+                onClick={() => setBgType('teal-dark')}
+                style={{ backgroundColor: '#042f23' }}
+              />
+
+              {/* Photo upload */}
+              <BgOption
+                selected={bgType === 'photo'}
+                onClick={handlePhotoTileClick}
+                style={bgPhotoUrl ? {
+                  backgroundImage: `url(${bgPhotoUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                } : { backgroundColor: '#1a1a1a' }}
+              >
+                {!bgPhotoUrl && (
+                  <Camera size={20} className="text-gray-500" />
+                )}
+                {bgPhotoUrl && (
+                  <button
+                    onClick={removePhoto}
+                    className="absolute top-0.5 right-0.5 w-[18px] h-[18px] rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+                  >
+                    <X size={9} className="text-white" />
+                  </button>
+                )}
+              </BgOption>
+
+
+            </div>
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handlePhotoUpload}
+            />
+          </div>
 
           {/* Action buttons */}
           <div className="px-4 flex flex-col gap-3 shrink-0">
@@ -453,7 +634,6 @@ export default function WorkoutShareCard(props: ShareCardProps) {
                 animate="animate"
                 exit="exit"
               >
-                {/* Header */}
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 rounded-full bg-tint flex items-center justify-center shrink-0">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">

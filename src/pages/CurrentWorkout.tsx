@@ -211,11 +211,11 @@ function ExerciseCard({
 
 export default function CurrentWorkout() {
   const navigate       = useNavigate();
-  const currentWorkout = useStore((s) => s.currentWorkout);
-  const workouts       = useStore((s) => s.workouts);
-  const endWorkout     = useStore((s) => s.endWorkout);
-  const addExercise    = useStore((s) => s.addExercise);
-  const removeExercise = useStore((s) => s.removeExercise);
+  const currentWorkout  = useStore((s) => s.currentWorkout);
+  const workouts        = useStore((s) => s.workouts);
+  const addExercise     = useStore((s) => s.addExercise);
+  const removeExercise  = useStore((s) => s.removeExercise);
+  const discardWorkout  = useStore((s) => s.discardWorkout);
 
   const [elapsed,    setElapsed]    = useState(0);
   const [isRunning,  setIsRunning]  = useState(true);
@@ -223,6 +223,7 @@ export default function CurrentWorkout() {
   const [restSeconds,  setRestSeconds]  = useState(0);
   const [showRest,     setShowRest]     = useState(false);
   const [addExOpen,    setAddExOpen]    = useState(false);
+  const [showFinishSheet, setShowFinishSheet] = useState(false);
   const [search,       setSearch]       = useState('');
 
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
@@ -280,7 +281,7 @@ export default function CurrentWorkout() {
     });
   };
 
-  const handleFinishAndSummary = () => {
+  const buildSummaryState = () => {
     const summaryExercises = currentWorkout.exercises.map((ex) => {
       const historyWeights = workouts
         .flatMap((w) => w.exercises)
@@ -303,15 +304,26 @@ export default function CurrentWorkout() {
       };
     }).filter((ex) => ex.sets.length > 0);
 
-    endWorkout();
-    navigate('/workout/summary', {
-      state: {
-        date: dayjs(currentWorkout.createdAt).format('ddd, D MMM'),
-        startTime: dayjs(currentWorkout.createdAt).format('h:mm A'),
-        durationSeconds: elapsed,
-        exercises: summaryExercises,
-      },
-    });
+    return {
+      date: dayjs(currentWorkout.createdAt).format('ddd, D MMM'),
+      startTime: dayjs(currentWorkout.createdAt).format('h:mm A'),
+      durationSeconds: elapsed,
+      exercises: summaryExercises,
+    };
+  };
+
+  const handleConfirmSave = () => {
+    const summaryState = buildSummaryState();
+    setShowFinishSheet(false);
+    // Wait for sheet exit animation before mounting summary screen
+    setTimeout(() => navigate('/workout/summary', { state: summaryState }), 220);
+  };
+
+  const handleDiscardFromSheet = () => {
+    setShowFinishSheet(false);
+    // Navigate first so the guard doesn't fire while CurrentWorkout exits
+    navigate('/');
+    setTimeout(() => discardWorkout(), 300);
   };
 
   const filtered = exerciseList.filter((e) =>
@@ -433,7 +445,7 @@ export default function CurrentWorkout() {
 
         {/* ── Finish button ─────────────────────────────────────────────── */}
         <motion.button
-          onClick={handleFinishAndSummary}
+          onClick={() => setShowFinishSheet(true)}
           className="w-full bg-tint rounded-2xl py-[18px] flex items-center justify-center gap-2 font-black text-white text-[17px] shadow-[0_4px_20px_rgba(16,185,129,0.3)]"
           whileTap={press.whileTap}
         >
@@ -472,6 +484,59 @@ export default function CurrentWorkout() {
               </button>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Finish workout confirmation sheet ──────────────────────────── */}
+      <AnimatePresence>
+        {showFinishSheet && (
+          <div className="fixed inset-0 z-50 flex flex-col justify-end">
+            <motion.div
+              className="absolute inset-0 bg-black/70"
+              variants={overlayFade}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              onClick={() => setShowFinishSheet(false)}
+            />
+            <motion.div
+              className="relative bg-white rounded-t-3xl w-full px-5 pt-5 pb-10"
+              variants={sheetSlide}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center mb-4">
+                <div className="w-10 h-1 bg-gray-200 rounded-full" />
+              </div>
+
+              <p className="text-[20px] font-black text-gray-900 mb-1">Finish workout?</p>
+              <p className="text-[14px] text-gray-400 font-medium mb-6">
+                {completedSetIds.size} set{completedSetIds.size !== 1 ? 's' : ''} completed
+                {' · '}
+                {Math.floor(elapsed / 60)}m {elapsed % 60}s
+              </p>
+
+              <div className="flex flex-col gap-3">
+                <motion.button
+                  onClick={handleConfirmSave}
+                  className="w-full bg-tint text-white font-black text-[16px] py-[17px] rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(16,185,129,0.25)]"
+                  whileTap={press.whileTap}
+                >
+                  <Check size={18} strokeWidth={3} />
+                  Save workout
+                </motion.button>
+                <motion.button
+                  onClick={handleDiscardFromSheet}
+                  className="w-full bg-white text-red-500 font-semibold text-[15px] py-[15px] rounded-2xl border border-gray-100"
+                  whileTap={press.whileTap}
+                >
+                  Discard workout
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

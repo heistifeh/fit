@@ -9,6 +9,8 @@ import {
 import WorkoutDetailScreen, {
   type WorkoutDetail, type DetailExercise, type DetailSet,
 } from './WorkoutDetailScreen';
+import { usePreferences } from '@/context/PreferencesContext';
+import { formatWeight } from '@/utils/weight';
 
 dayjs.extend(isoWeek);
 
@@ -221,7 +223,7 @@ function MonthlyHeatmap() {
 
 // ─── WorkoutCard ──────────────────────────────────────────────────────────────
 
-function WorkoutCard({ workout, onClick }: { workout: MockWorkout; onClick: () => void }) {
+function WorkoutCard({ workout, onClick, weightUnit }: { workout: MockWorkout; onClick: () => void; weightUnit: 'kg' | 'lbs' }) {
   const vol  = totalVolume(workout);
   const sets = totalSets(workout);
   const shown = workout.exercises.slice(0, 2);
@@ -230,7 +232,7 @@ function WorkoutCard({ workout, onClick }: { workout: MockWorkout; onClick: () =
   return (
     <motion.div
       onClick={onClick}
-      className="bg-white rounded-2xl border border-[#f0f0f0] px-4 py-4 cursor-pointer"
+      className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-4 cursor-pointer"
       variants={staggerChild}
       whileTap={press.whileTap}
     >
@@ -238,7 +240,7 @@ function WorkoutCard({ workout, onClick }: { workout: MockWorkout; onClick: () =
       {/* Top row */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="min-w-0">
-          <p className="font-bold text-[15px] leading-snug">
+          <p className="font-bold text-[15px] leading-snug dark:text-white">
             {workout.date}
           </p>
           <p className="text-[12px] text-gray-400 mt-0.5">
@@ -264,8 +266,8 @@ function WorkoutCard({ workout, onClick }: { workout: MockWorkout; onClick: () =
           <div className="w-6 h-6 rounded-lg bg-tint-muted flex items-center justify-center">
             <Dumbbell size={13} className="text-tint" />
           </div>
-          <span className="text-[13px] font-bold text-gray-700">
-            {vol.toLocaleString()} kg
+          <span className="text-[13px] font-bold text-gray-700 dark:text-gray-300">
+            {formatWeight(vol, weightUnit)}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -306,6 +308,7 @@ const FILTER_PILLS = ['All', 'This week', 'This month', 'Push', 'Pull', 'Legs'];
 export default function History() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedWorkout, setSelectedWorkout] = useState<MockWorkout | null>(null);
+  const { weightUnit } = usePreferences();
 
   // ── Group workouts by week ────────────────────────────────────────────────
   const thisWeekStart = today.startOf('week');
@@ -355,8 +358,8 @@ export default function History() {
     >
 
       {/* ── 1. Header ─────────────────────────────────────────────────────── */}
-      <header className="bg-white px-5 pt-12 pb-0">
-        <h1 className="text-[28px] font-black leading-tight tracking-tight mb-4">History</h1>
+      <header className="bg-white dark:bg-[#111] px-5 pt-12 pb-0">
+        <h1 className="text-[28px] font-black leading-tight tracking-tight mb-4 dark:text-white">History</h1>
 
         {/* Filter pills */}
         <div
@@ -370,7 +373,7 @@ export default function History() {
               className={`shrink-0 px-4 py-1.5 rounded-full text-[13px] font-semibold border transition-colors ${
                 activeFilter === pill
                   ? 'bg-tint text-white border-tint'
-                  : 'bg-white text-gray-500 border-gray-200'
+                  : 'bg-white dark:bg-[#1a1a1a] text-gray-500 dark:text-[#555] border-gray-200 dark:border-[#333]'
               }`}
               whileTap={press.whileTap}
             >
@@ -391,7 +394,7 @@ export default function History() {
         {/* ── 2. Monthly Summary Card ───────────────────────────────────────── */}
         <motion.div
           variants={staggerChild}
-          className="bg-white rounded-2xl border border-[#f0f0f0] p-4"
+          className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-4"
         >
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
             {monthLabel}
@@ -406,14 +409,16 @@ export default function History() {
               <span className="text-[11px] text-gray-400 font-medium">sessions</span>
             </div>
             <div className="flex flex-col items-center gap-0.5">
-              <span className="text-[24px] font-black leading-none text-gray-900 tabular-nums">
-                {(monthVol / 1000).toFixed(1)}
-                <span className="text-sm font-bold">k</span>
+              <span className="text-[24px] font-black leading-none text-gray-900 dark:text-white tabular-nums">
+                {weightUnit === 'lbs'
+                  ? `${((monthVol * 2.2046) / 1000).toFixed(1)}k`
+                  : `${(monthVol / 1000).toFixed(1)}k`}
+                <span className="text-sm font-bold">{weightUnit === 'lbs' ? '' : ''}</span>
               </span>
-              <span className="text-[11px] text-gray-400 font-medium">kg lifted</span>
+              <span className="text-[11px] text-gray-400 font-medium">{weightUnit} lifted</span>
             </div>
             <div className="flex flex-col items-center gap-0.5">
-              <span className="text-[24px] font-black leading-none text-gray-900 tabular-nums flex items-center gap-0.5">
+              <span className="text-[24px] font-black leading-none text-gray-900 dark:text-white tabular-nums flex items-center gap-0.5">
                 🔥{streak}
               </span>
               <span className="text-[11px] text-gray-400 font-medium">streak</span>
@@ -421,7 +426,7 @@ export default function History() {
           </div>
 
           {/* Activity heatmap */}
-          <div className="pt-2 border-t border-gray-50">
+          <div className="pt-2 border-t border-gray-50 dark:border-[#1a1a1a]">
             <p className="text-[10px] text-gray-400 font-semibold mb-2 uppercase tracking-wide">
               Activity
             </p>
@@ -440,7 +445,7 @@ export default function History() {
                   {group.label}
                 </span>
                 <span className="text-[12px] font-bold text-tint">
-                  {groupVol.toLocaleString()} kg
+                  {formatWeight(groupVol, weightUnit)}
                 </span>
               </div>
 
@@ -452,7 +457,7 @@ export default function History() {
                 animate="animate"
               >
                 {group.workouts.map((w) => (
-                  <WorkoutCard key={w.id} workout={w} onClick={() => setSelectedWorkout(w)} />
+                  <WorkoutCard key={w.id} workout={w} weightUnit={weightUnit} onClick={() => setSelectedWorkout(w)} />
                 ))}
               </motion.div>
             </motion.div>
@@ -465,6 +470,7 @@ export default function History() {
     <AnimatePresence>
       {selectedWorkout && (
         <WorkoutDetailScreen
+          key={selectedWorkout.id}
           workout={toWorkoutDetail(selectedWorkout)}
           onBack={() => setSelectedWorkout(null)}
         />
