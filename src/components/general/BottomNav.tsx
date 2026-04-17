@@ -1,10 +1,12 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Activity, Plus, BarChart2, User } from 'lucide-react';
+import { motion } from 'framer-motion';
 import useStore from '@/store';
+import { tabActive, fabPulse, press } from '@/animations/fitnex.variants';
 
 export default function BottomNav() {
-  const navigate    = useNavigate();
-  const { pathname } = useLocation();
+  const navigate       = useNavigate();
+  const { pathname }   = useLocation();
   const currentWorkout = useStore((state) => state.currentWorkout);
   const startWorkout   = useStore((state) => state.startWorkout);
 
@@ -19,25 +21,23 @@ export default function BottomNav() {
   };
 
   const Item = ({
-    icon,
-    label,
-    active,
-    onClick,
+    icon, label, active, onClick,
   }: {
     icon: React.ReactNode;
     label: string;
     active?: boolean;
     onClick?: () => void;
   }) => (
-    <button
+    <motion.button
       onClick={onClick}
       className="flex flex-col items-center gap-1 flex-1 py-2"
+      variants={tabActive}
+      animate={active ? 'active' : 'inactive'}
+      initial={false}
     >
-      <span className={active ? 'text-tint' : 'text-gray-400'}>{icon}</span>
-      <span className={`text-[10px] font-medium ${active ? 'text-tint' : 'text-gray-400'}`}>
-        {label}
-      </span>
-    </button>
+      <span>{icon}</span>
+      <span className="text-[10px] font-medium">{label}</span>
+    </motion.button>
   );
 
   return (
@@ -48,15 +48,18 @@ export default function BottomNav() {
 
         {/* Centre FAB */}
         <div className="flex flex-col items-center flex-1">
-          <button
+          <motion.button
             onClick={handleFAB}
-            className="w-[52px] h-[52px] rounded-full bg-tint flex items-center justify-center shadow-[0_4px_14px_rgba(16,185,129,0.4)] active:scale-95 transition-transform -mt-5"
+            className="w-[52px] h-[52px] rounded-full bg-tint flex items-center justify-center -mt-5"
+            animate={fabPulse.animate}
+            transition={fabPulse.transition}
+            whileTap={press.whileTap}
           >
             <Plus size={24} className="text-white" />
-          </button>
+          </motion.button>
         </div>
 
-        <Item icon={<BarChart2 size={22} />} label="Stats"   active={isStats} onClick={() => navigate('/stats')} />
+        <Item icon={<BarChart2 size={22} />} label="Stats"   active={isStats}   onClick={() => navigate('/stats')} />
         <Item icon={<User size={22} />}      label="Profile" active={isProfile} onClick={() => navigate('/profile')} />
       </div>
     </nav>

@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { Dumbbell, Calendar, Clock } from 'lucide-react';
+import { motion } from 'framer-motion';
 import {
   AreaChart, Area, XAxis, ResponsiveContainer, Tooltip,
 } from 'recharts';
+import {
+  screenEnter, staggerContainer, staggerChild, SPRING,
+} from '@/animations/fitnex.variants';
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
@@ -89,7 +93,13 @@ export default function Stats() {
   const [activePeriod, setActivePeriod] = useState('Week');
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <motion.div
+      className="flex flex-col min-h-screen"
+      variants={screenEnter}
+      initial="initial"
+      animate="animate"
+      exit={{ opacity: 0, transition: { duration: 0.15 } }}
+    >
 
       {/* ── 1. Header ─────────────────────────────────────────────────────── */}
       <header className="bg-white border-b border-gray-100 px-5 pt-12 pb-0">
@@ -98,7 +108,7 @@ export default function Stats() {
         {/* Period pills */}
         <div className="flex gap-2 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none' }}>
           {PERIOD_PILLS.map((p) => (
-            <button
+            <motion.button
               key={p}
               onClick={() => setActivePeriod(p)}
               className={`shrink-0 px-4 py-1.5 rounded-full text-[13px] font-semibold border transition-colors ${
@@ -106,9 +116,10 @@ export default function Stats() {
                   ? 'bg-tint text-white border-tint'
                   : 'bg-white text-gray-500 border-gray-200'
               }`}
+              whileTap={{ scale: 0.96 }}
             >
               {p}
-            </button>
+            </motion.button>
           ))}
         </div>
       </header>
@@ -117,10 +128,15 @@ export default function Stats() {
       <div className="flex-1 pb-[90px]">
 
         {/* ── 2. Overview Cards ─────────────────────────────────────────────── */}
-        <div className="px-4 pt-4 grid grid-cols-2 gap-3">
+        <motion.div
+          className="px-4 pt-4 grid grid-cols-2 gap-3"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
 
           {/* Total volume */}
-          <div className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
+          <motion.div variants={staggerChild} className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
             <div className="flex items-start justify-between mb-3">
               <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                 <Dumbbell size={15} className="text-tint" />
@@ -132,10 +148,10 @@ export default function Stats() {
               <span className="text-[14px] font-bold text-gray-400 ml-0.5">kg</span>
             </p>
             <p className="text-[12px] text-gray-400 font-medium mt-1">Total volume</p>
-          </div>
+          </motion.div>
 
           {/* Workouts */}
-          <div className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
+          <motion.div variants={staggerChild} className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
             <div className="flex items-start justify-between mb-3">
               <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                 <Calendar size={15} className="text-tint" />
@@ -146,10 +162,10 @@ export default function Stats() {
               {overviewStats.sessions}
             </p>
             <p className="text-[12px] text-gray-400 font-medium mt-1">Workouts</p>
-          </div>
+          </motion.div>
 
           {/* Avg duration */}
-          <div className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
+          <motion.div variants={staggerChild} className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
             <div className="flex items-start justify-between mb-3">
               <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                 <Clock size={15} className="text-tint" />
@@ -161,10 +177,10 @@ export default function Stats() {
               <span className="text-[14px] font-bold text-gray-400 ml-0.5">m avg</span>
             </p>
             <p className="text-[12px] text-gray-400 font-medium mt-1">Avg duration</p>
-          </div>
+          </motion.div>
 
           {/* Streak */}
-          <div className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
+          <motion.div variants={staggerChild} className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
             <div className="flex items-start justify-between mb-3">
               <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center text-lg leading-none">
                 🔥
@@ -178,11 +194,16 @@ export default function Stats() {
               <span className="text-[14px] font-bold text-gray-400 ml-0.5">days</span>
             </p>
             <p className="text-[12px] text-gray-400 font-medium mt-1">Current streak</p>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* ── 3. Volume Chart ───────────────────────────────────────────────── */}
-        <div className="px-4 pt-5">
+        <motion.div
+          className="px-4 pt-5"
+          variants={staggerChild}
+          initial="initial"
+          animate="animate"
+        >
           <p className="text-[16px] font-bold mb-3">Volume this week</p>
           <div className="bg-white rounded-2xl border border-[#f0f0f0] pt-4 pb-2 px-2">
 
@@ -224,7 +245,6 @@ export default function Stats() {
                   cursor={{ stroke: '#f0f0f0', strokeWidth: 1 }}
                 />
 
-                {/* Last week — behind, dashed stroke */}
                 <Area
                   type="monotone"
                   dataKey="lastWeek"
@@ -236,7 +256,6 @@ export default function Stats() {
                   activeDot={{ r: 4, fill: '#6ee7b7', strokeWidth: 0 }}
                 />
 
-                {/* This week — front, solid */}
                 <Area
                   type="monotone"
                   dataKey="thisWeek"
@@ -249,13 +268,18 @@ export default function Stats() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
 
         {/* ── 4. Muscle Groups ──────────────────────────────────────────────── */}
-        <div className="px-4 pt-5">
+        <motion.div
+          className="px-4 pt-5"
+          variants={staggerChild}
+          initial="initial"
+          animate="animate"
+        >
           <p className="text-[16px] font-bold mb-3">Muscle groups</p>
           <div className="bg-white rounded-2xl border border-[#f0f0f0] px-4 py-3 flex flex-col gap-4">
-            {muscleGroups.map((mg) => {
+            {muscleGroups.map((mg, idx) => {
               const color = barColor(mg.pct);
               return (
                 <div key={mg.name} className="flex items-center gap-3">
@@ -266,9 +290,12 @@ export default function Stats() {
                       <span className="text-[12px] font-bold" style={{ color }}>{mg.pct}%</span>
                     </div>
                     <div className="h-[6px] bg-[#f0f0f0] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{ width: `${mg.pct}%`, backgroundColor: color }}
+                      <motion.div
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: color }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${mg.pct}%` }}
+                        transition={{ ...SPRING.soft, delay: 0.2 + idx * 0.07 }}
                       />
                     </div>
                   </div>
@@ -276,23 +303,27 @@ export default function Stats() {
               );
             })}
           </div>
-        </div>
+        </motion.div>
 
         {/* ── 5. Personal Records ───────────────────────────────────────────── */}
-        <div className="px-4 pt-5">
+        <motion.div
+          className="px-4 pt-5"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
           <p className="text-[16px] font-bold mb-3">Personal Records</p>
           <div className="flex flex-col gap-3">
             {personalRecords.map((pr) => (
-              <div
+              <motion.div
                 key={pr.exercise}
+                variants={staggerChild}
                 className="bg-white rounded-2xl border border-[#f0f0f0] px-4 py-3.5 flex items-center gap-3"
               >
-                {/* Trophy icon */}
                 <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center text-xl shrink-0">
                   🏆
                 </div>
 
-                {/* Middle */}
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-[14px] leading-snug">{pr.exercise}</p>
                   <p className="text-[12px] text-gray-400 mt-0.5">
@@ -300,7 +331,6 @@ export default function Stats() {
                   </p>
                 </div>
 
-                {/* Right */}
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <p className="font-black text-[16px] text-gray-900 tabular-nums">
                     {pr.kg} kg
@@ -309,12 +339,12 @@ export default function Stats() {
                     {pr.improvement}
                   </span>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
       </div>
-    </div>
+    </motion.div>
   );
 }

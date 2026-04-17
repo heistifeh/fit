@@ -3,10 +3,15 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import {
   X, Clock, Pause, Play, Plus, MoreVertical, Check,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import dayjs from 'dayjs';
 import useStore from '@/store';
 import exerciseList from '@/data/exercises';
 import { ExerciseSet, ExerciseWithSets } from '@/types/models';
+import {
+  screenEnter, staggerChild, staggerContainer, checkPunch, rowFlood,
+  sheetSlide, overlayFade, press, SPRING,
+} from '@/animations/fitnex.variants';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -44,9 +49,13 @@ function SetRow({ set, index, previous, completed, onToggle }: SetRowProps) {
   const inputIdle = 'bg-white border-gray-200 text-gray-800';
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 transition-colors ${
-      completed ? 'bg-[#f0fdf4]' : ''
-    }`}>
+    <motion.div
+      variants={rowFlood}
+      animate={completed ? 'checked' : 'unchecked'}
+      initial={false}
+      layout
+      className="flex items-center gap-2 px-3 py-2"
+    >
       {/* # */}
       <span className={`w-7 text-center text-[15px] font-black shrink-0 ${
         completed ? 'text-tint' : 'text-gray-400'
@@ -82,17 +91,21 @@ function SetRow({ set, index, previous, completed, onToggle }: SetRowProps) {
       />
 
       {/* ✓ */}
-      <button
+      <motion.button
         onClick={onToggle}
-        className={`w-9 h-9 rounded-xl border-2 flex items-center justify-center shrink-0 transition-all active:scale-90 ${
+        variants={checkPunch}
+        animate={completed ? 'checked' : 'unchecked'}
+        initial={false}
+        className={`w-9 h-9 rounded-xl border-2 flex items-center justify-center shrink-0 ${
           completed
-            ? 'bg-tint border-tint shadow-[0_2px_8px_rgba(16,185,129,0.35)]'
-            : 'border-gray-200 bg-white'
+            ? 'border-tint shadow-[0_2px_8px_rgba(16,185,129,0.35)]'
+            : 'border-gray-200'
         }`}
+        whileTap={press.whileTap}
       >
         {completed && <Check size={14} className="text-white" strokeWidth={3} />}
-      </button>
-    </div>
+      </motion.button>
+    </motion.div>
   );
 }
 
@@ -160,16 +173,26 @@ function ExerciseCard({
 
       {/* Set rows */}
       <div className="flex flex-col pb-1">
-        {exercise.sets.map((set, i) => (
-          <SetRow
-            key={set.id}
-            set={set}
-            index={i}
-            previous={previous}
-            completed={completedSetIds.has(set.id)}
-            onToggle={() => onToggleSet(set.id)}
-          />
-        ))}
+        <AnimatePresence initial={false}>
+          {exercise.sets.map((set, i) => (
+            <motion.div
+              key={set.id}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto', transition: { ...SPRING.soft } }}
+              exit={{ opacity: 0, height: 0, transition: { duration: 0.18 } }}
+              layout
+              style={{ overflow: 'hidden' }}
+            >
+              <SetRow
+                set={set}
+                index={i}
+                previous={previous}
+                completed={completedSetIds.has(set.id)}
+                onToggle={() => onToggleSet(set.id)}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
       {/* Add set */}
@@ -257,12 +280,8 @@ export default function CurrentWorkout() {
     });
   };
 
-  const handleSave = () => { endWorkout(); navigate('/'); };
-
   const handleFinishAndSummary = () => {
-    // Build summary exercises from completedSetIds
     const summaryExercises = currentWorkout.exercises.map((ex) => {
-      // Determine per-exercise best weight from history
       const historyWeights = workouts
         .flatMap((w) => w.exercises)
         .filter((e) => e.name === ex.name)
@@ -300,7 +319,13 @@ export default function CurrentWorkout() {
   );
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f8f9fa]">
+    <motion.div
+      className="flex flex-col min-h-screen bg-[#f8f9fa]"
+      variants={screenEnter}
+      initial="initial"
+      animate="animate"
+      exit={{ opacity: 0, transition: { duration: 0.15 } }}
+    >
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
       <header className="bg-white border-b border-gray-100 px-4 pt-10 pb-4 sticky top-0 z-20">
@@ -313,12 +338,13 @@ export default function CurrentWorkout() {
               {currentWorkout.exercises.length} exercise{currentWorkout.exercises.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <button
+          <motion.button
             onClick={() => navigate('/')}
             className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center mt-1 active:bg-gray-200"
+            whileTap={press.whileTap}
           >
             <X size={18} className="text-gray-500" />
-          </button>
+          </motion.button>
         </div>
       </header>
 
@@ -338,19 +364,21 @@ export default function CurrentWorkout() {
           </div>
 
           {isRunning ? (
-            <button
+            <motion.button
               onClick={() => setIsRunning(false)}
-              className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center active:bg-gray-200"
+              className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center"
+              whileTap={press.whileTap}
             >
               <Pause size={18} className="text-gray-500" />
-            </button>
+            </motion.button>
           ) : (
-            <button
+            <motion.button
               onClick={() => setIsRunning(true)}
-              className="w-11 h-11 rounded-xl bg-tint flex items-center justify-center active:opacity-80"
+              className="w-11 h-11 rounded-xl bg-tint flex items-center justify-center"
+              whileTap={press.whileTap}
             >
               <Play size={18} className="text-white translate-x-0.5" fill="white" />
-            </button>
+            </motion.button>
           )}
         </div>
 
@@ -358,13 +386,14 @@ export default function CurrentWorkout() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="font-bold text-[15px]">Exercises</p>
-            <button
+            <motion.button
               onClick={() => setAddExOpen(true)}
-              className="flex items-center gap-1.5 border border-gray-200 bg-white text-tint text-sm font-bold px-4 py-2 rounded-xl active:bg-gray-50 transition-colors"
+              className="flex items-center gap-1.5 border border-gray-200 bg-white text-tint text-sm font-bold px-4 py-2 rounded-xl"
+              whileTap={press.whileTap}
             >
               <Plus size={14} strokeWidth={2.5} />
               Add exercise
-            </button>
+            </motion.button>
           </div>
 
           {currentWorkout.exercises.length === 0 ? (
@@ -374,114 +403,156 @@ export default function CurrentWorkout() {
               <p className="text-xs text-gray-400">Tap "Add exercise" to get started</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
-              {currentWorkout.exercises.map((exercise) => (
-                <ExerciseCard
-                  key={exercise.id}
-                  exercise={exercise}
-                  completedSetIds={completedSetIds}
-                  previous={previousMap[exercise.name] ?? null}
-                  onToggleSet={handleToggleSet}
-                  onRemove={() => removeExercise(exercise.id)}
-                />
-              ))}
-            </div>
+            <motion.div
+              className="flex flex-col gap-3"
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+            >
+              <AnimatePresence initial={false}>
+                {currentWorkout.exercises.map((exercise) => (
+                  <motion.div
+                    key={exercise.id}
+                    variants={staggerChild}
+                    exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+                    layout
+                  >
+                    <ExerciseCard
+                      exercise={exercise}
+                      completedSetIds={completedSetIds}
+                      previous={previousMap[exercise.name] ?? null}
+                      onToggleSet={handleToggleSet}
+                      onRemove={() => removeExercise(exercise.id)}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
         </div>
 
         {/* ── Finish button ─────────────────────────────────────────────── */}
-        <button
+        <motion.button
           onClick={handleFinishAndSummary}
-          className="w-full bg-tint rounded-2xl py-[18px] flex items-center justify-center gap-2 font-black text-white text-[17px] shadow-[0_4px_20px_rgba(16,185,129,0.3)] active:opacity-90 active:scale-[0.99] transition-transform"
+          className="w-full bg-tint rounded-2xl py-[18px] flex items-center justify-center gap-2 font-black text-white text-[17px] shadow-[0_4px_20px_rgba(16,185,129,0.3)]"
+          whileTap={press.whileTap}
         >
           <Check size={20} strokeWidth={3} />
           Finish Workout
-        </button>
+        </motion.button>
       </div>
 
       {/* ── Rest timer toast ────────────────────────────────────────────── */}
-      {showRest && (
-        <div className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4 pointer-events-none">
-          <div className="bg-[#111] rounded-2xl px-4 py-3 flex items-center gap-3 w-full max-w-[358px] shadow-2xl pointer-events-auto">
-            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-              <Clock size={15} className="text-tint" />
-            </div>
-            <div className="flex-1">
-              <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide leading-none mb-0.5">
-                Rest timer
-              </p>
-              <p className="text-xl font-black tabular-nums text-tint leading-tight">
-                {fmtTime(restSeconds)}
-              </p>
-            </div>
-            <button
-              onClick={() => setShowRest(false)}
-              className="bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold px-4 py-2 rounded-xl active:opacity-70"
-            >
-              Skip
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Add exercise bottom sheet ────────────────────────────────────── */}
-      {addExOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center">
-          <div className="absolute inset-0 bg-black/70" onClick={() => { setAddExOpen(false); setSearch(''); }} />
-          <div
-            className="relative animate-slide-up sm:animate-none bg-white rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md flex flex-col"
-            style={{ maxHeight: '88vh' }}
+      <AnimatePresence>
+        {showRest && (
+          <motion.div
+            className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4 pointer-events-none"
+            variants={sheetSlide}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
-            {/* drag handle */}
-            <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <div className="w-10 h-1 bg-gray-200 rounded-full" />
-            </div>
-
-            <div className="flex items-center justify-between px-5 py-4">
-              <p className="text-lg font-bold">Add exercise</p>
+            <div className="bg-[#111] rounded-2xl px-4 py-3 flex items-center gap-3 w-full max-w-[358px] shadow-2xl pointer-events-auto">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
+                <Clock size={15} className="text-tint" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide leading-none mb-0.5">
+                  Rest timer
+                </p>
+                <p className="text-xl font-black tabular-nums text-tint leading-tight">
+                  {fmtTime(restSeconds)}
+                </p>
+              </div>
               <button
-                onClick={() => { setAddExOpen(false); setSearch(''); }}
-                className="p-2 -mr-2 text-gray-400"
+                onClick={() => setShowRest(false)}
+                className="bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold px-4 py-2 rounded-xl active:opacity-70"
               >
-                <X size={20} />
+                Skip
               </button>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            <div className="px-5 pb-3">
-              <input
-                type="text"
-                placeholder="Search exercises..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                autoFocus
-                className="w-full py-3 px-4 bg-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-tint placeholder:text-gray-400"
-              />
-            </div>
+      {/* ── Add exercise bottom sheet ────────────────────────────────────── */}
+      <AnimatePresence>
+        {addExOpen && (
+          <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center">
+            <motion.div
+              className="absolute inset-0 bg-black/70"
+              variants={overlayFade}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              onClick={() => { setAddExOpen(false); setSearch(''); }}
+            />
+            <motion.div
+              className="relative bg-white rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md flex flex-col"
+              style={{ maxHeight: '88vh' }}
+              variants={sheetSlide}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              {/* drag handle */}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden">
+                <div className="w-10 h-1 bg-gray-200 rounded-full" />
+              </div>
 
-            <div className="overflow-y-auto flex-1 px-5 pb-8">
-              {filtered.length === 0 && (
-                <p className="text-center text-gray-400 py-8">No exercises found</p>
-              )}
-              {filtered.map((ex) => (
+              <div className="flex items-center justify-between px-5 py-4">
+                <p className="text-lg font-bold">Add exercise</p>
                 <button
-                  key={ex.name}
-                  onClick={() => { addExercise(ex.name); setAddExOpen(false); setSearch(''); }}
-                  className="w-full text-left flex items-center gap-3 py-3 border-b border-gray-50 last:border-0 active:bg-gray-50 rounded-lg"
+                  onClick={() => { setAddExOpen(false); setSearch(''); }}
+                  className="p-2 -mr-2 text-gray-400"
                 >
-                  <span className="w-9 h-9 rounded-xl bg-tint-muted flex items-center justify-center text-base shrink-0">
-                    {getEmoji(ex.name)}
-                  </span>
-                  <div>
-                    <p className="font-semibold text-sm">{ex.name}</p>
-                    <p className="text-xs text-gray-400">{ex.muscle}</p>
-                  </div>
+                  <X size={20} />
                 </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+              </div>
 
-    </div>
+              <div className="px-5 pb-3">
+                <input
+                  type="text"
+                  placeholder="Search exercises..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  autoFocus
+                  className="w-full py-3 px-4 bg-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-tint placeholder:text-gray-400"
+                />
+              </div>
+
+              <motion.div
+                className="overflow-y-auto flex-1 px-5 pb-8"
+                variants={staggerContainer}
+                initial="initial"
+                animate="animate"
+              >
+                {filtered.length === 0 && (
+                  <p className="text-center text-gray-400 py-8">No exercises found</p>
+                )}
+                {filtered.map((ex) => (
+                  <motion.button
+                    key={ex.name}
+                    variants={staggerChild}
+                    onClick={() => { addExercise(ex.name); setAddExOpen(false); setSearch(''); }}
+                    className="w-full text-left flex items-center gap-3 py-3 border-b border-gray-50 last:border-0 rounded-lg"
+                    whileTap={press.whileTap}
+                  >
+                    <span className="w-9 h-9 rounded-xl bg-tint-muted flex items-center justify-center text-base shrink-0">
+                      {getEmoji(ex.name)}
+                    </span>
+                    <div>
+                      <p className="font-semibold text-sm">{ex.name}</p>
+                      <p className="text-xs text-gray-400">{ex.muscle}</p>
+                    </div>
+                  </motion.button>
+                ))}
+              </motion.div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+    </motion.div>
   );
 }

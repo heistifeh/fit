@@ -1,7 +1,13 @@
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Clock, Dumbbell, CheckSquare, Share2, Check, Save,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import WorkoutShareCard from '@/components/general/WorkoutShareCard';
+import {
+  screenEnter, staggerContainer, staggerChild, prBurst, countUp, press,
+} from '@/animations/fitnex.variants';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -74,6 +80,8 @@ export default function WorkoutSummary() {
       .filter((s) => s.completed)
       .reduce((acc, s) => acc + s.kg * s.reps, 0);
 
+  const [showShare, setShowShare] = useState(false);
+
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleSave = () => {
     if (onSave) { onSave(); } else { navigate('/'); }
@@ -84,7 +92,13 @@ export default function WorkoutSummary() {
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#f8f9fa] overflow-y-auto pb-10">
+    <motion.div
+      className="min-h-screen bg-[#f8f9fa] overflow-y-auto pb-10"
+      variants={screenEnter}
+      initial="initial"
+      animate="animate"
+      exit={{ opacity: 0, transition: { duration: 0.15 } }}
+    >
       <div className="mx-auto max-w-[390px]">
 
         {/* ── 1. Hero Banner ────────────────────────────────────────────────── */}
@@ -99,9 +113,13 @@ export default function WorkoutSummary() {
               <Check size={12} strokeWidth={3} />
               Workout complete
             </span>
-            <button className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center active:opacity-70">
+            <motion.button
+              onClick={() => setShowShare(true)}
+              className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center"
+              whileTap={press.whileTap}
+            >
               <Share2 size={16} className="text-white" />
-            </button>
+            </motion.button>
           </div>
 
           {/* Heading */}
@@ -118,9 +136,17 @@ export default function WorkoutSummary() {
 
         {/* ── 2. Stats Row ──────────────────────────────────────────────────── */}
         <div className="px-4 -mt-4 relative z-10">
-          <div className="grid grid-cols-3 gap-3">
+          <motion.div
+            className="grid grid-cols-3 gap-3"
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+          >
             {/* Duration */}
-            <div className="bg-white rounded-2xl border border-[#f0f0f0] p-3 flex flex-col items-center gap-1.5">
+            <motion.div
+              variants={staggerChild}
+              className="bg-white rounded-2xl border border-[#f0f0f0] p-3 flex flex-col items-center gap-1.5"
+            >
               <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                 <Clock size={15} className="text-tint" />
               </div>
@@ -130,24 +156,33 @@ export default function WorkoutSummary() {
               <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">
                 Duration
               </p>
-            </div>
+            </motion.div>
 
             {/* Volume */}
-            <div className="bg-white rounded-2xl border border-[#f0f0f0] p-3 flex flex-col items-center gap-1.5">
+            <motion.div
+              variants={staggerChild}
+              className="bg-white rounded-2xl border border-[#f0f0f0] p-3 flex flex-col items-center gap-1.5"
+            >
               <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                 <Dumbbell size={15} className="text-tint" />
               </div>
-              <p className="text-[15px] font-black tabular-nums leading-tight text-center">
+              <motion.p
+                variants={countUp}
+                className="text-[15px] font-black tabular-nums leading-tight text-center"
+              >
                 {totalVolume.toLocaleString()}
                 <span className="text-[11px] font-semibold text-gray-400 ml-0.5">kg</span>
-              </p>
+              </motion.p>
               <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">
                 Volume
               </p>
-            </div>
+            </motion.div>
 
             {/* Sets */}
-            <div className="bg-white rounded-2xl border border-[#f0f0f0] p-3 flex flex-col items-center gap-1.5">
+            <motion.div
+              variants={staggerChild}
+              className="bg-white rounded-2xl border border-[#f0f0f0] p-3 flex flex-col items-center gap-1.5"
+            >
               <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                 <CheckSquare size={15} className="text-tint" />
               </div>
@@ -157,14 +192,17 @@ export default function WorkoutSummary() {
               <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">
                 Sets
               </p>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
 
         {/* ── 3. PR Banner (conditional) ────────────────────────────────────── */}
         {hasPR && (
           <div className="px-4 mt-4">
-            <div
+            <motion.div
+              variants={prBurst}
+              initial="initial"
+              animate="animate"
               className="rounded-2xl border border-amber-200 px-4 py-3.5 flex items-center gap-3"
               style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)' }}
             >
@@ -177,7 +215,7 @@ export default function WorkoutSummary() {
                   {prLabel}
                 </p>
               </div>
-            </div>
+            </motion.div>
           </div>
         )}
 
@@ -185,10 +223,16 @@ export default function WorkoutSummary() {
         <div className="px-4 mt-6">
           <p className="font-black text-[16px] mb-3">Exercise Summary</p>
 
-          <div className="flex flex-col gap-3">
+          <motion.div
+            className="flex flex-col gap-3"
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+          >
             {exercises.map((exercise) => (
-              <div
+              <motion.div
                 key={exercise.id}
+                variants={staggerChild}
                 className="bg-white rounded-2xl border border-[#f0f0f0] overflow-hidden"
               >
                 {/* Card header */}
@@ -231,7 +275,7 @@ export default function WorkoutSummary() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             ))}
 
             {exercises.length === 0 && (
@@ -240,27 +284,49 @@ export default function WorkoutSummary() {
                 <p className="text-sm text-gray-400 font-medium">No exercises recorded</p>
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
 
         {/* ── 5. Bottom Actions ─────────────────────────────────────────────── */}
         <div className="px-4 mt-6 flex flex-col gap-3">
-          <button
+          <motion.button
             onClick={handleSave}
-            className="w-full bg-[#10B981] text-white font-black text-[17px] py-[18px] rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(16,185,129,0.3)] active:opacity-90 active:scale-[0.99] transition-transform"
+            className="w-full bg-[#10B981] text-white font-black text-[17px] py-[18px] rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(16,185,129,0.3)]"
+            whileTap={press.whileTap}
           >
             <Save size={19} />
             Save Workout
-          </button>
-          <button
+          </motion.button>
+          <motion.button
             onClick={handleDiscard}
-            className="w-full bg-white text-[#ef4444] font-semibold text-[15px] py-[16px] rounded-2xl border border-[#f0f0f0] active:bg-red-50 transition-colors"
+            className="w-full bg-white text-[#ef4444] font-semibold text-[15px] py-[16px] rounded-2xl border border-[#f0f0f0]"
+            whileTap={press.whileTap}
           >
             Discard workout
-          </button>
+          </motion.button>
         </div>
 
       </div>
-    </div>
+
+      {/* ── Share card overlay ────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showShare && (
+          <WorkoutShareCard
+            name="Tife"
+            handle="@whoistife_x"
+            date={date}
+            durationMinutes={Math.round(durationSeconds / 60)}
+            totalVolume={totalVolume}
+            totalSets={totalSets}
+            streak={12}
+            hasPR={hasPR}
+            prExercise={firstPRSet?.exerciseName ?? ''}
+            prKg={firstPRSet?.kg ?? 0}
+            prReps={firstPRSet?.reps ?? 0}
+            onClose={() => setShowShare(false)}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

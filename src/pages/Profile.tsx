@@ -3,6 +3,10 @@ import {
   Pencil, Target, Dumbbell, Clock, Coffee, Bell, User,
   Code2, Power, ChevronRight,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  screenEnter, staggerContainer, staggerChild, press,
+} from '@/animations/fitnex.variants';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,9 +27,10 @@ function SettingsRow({
   iconBg, icon, label, sublabel, rightValue, rightElement, onClick, danger,
 }: SettingsRowProps) {
   return (
-    <button
+    <motion.button
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-gray-50 transition-colors"
+      className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
+      whileTap={press.whileTap}
     >
       {/* Icon */}
       <div
@@ -54,7 +59,7 @@ function SettingsRow({
           {!danger && <ChevronRight size={16} className="text-gray-300" />}
         </div>
       )}
-    </button>
+    </motion.button>
   );
 }
 
@@ -116,7 +121,13 @@ export default function Profile() {
   const [reminders,  setReminders]  = useState(true);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <motion.div
+      className="flex flex-col min-h-screen"
+      variants={screenEnter}
+      initial="initial"
+      animate="animate"
+      exit={{ opacity: 0, transition: { duration: 0.15 } }}
+    >
 
       {/* ── 1. Hero Header ────────────────────────────────────────────────── */}
       <header className="bg-white border-b border-gray-100 px-5 pt-12 pb-6">
@@ -165,18 +176,27 @@ export default function Profile() {
       </header>
 
       {/* ── Scrollable body ───────────────────────────────────────────────── */}
-      <div className="flex-1 px-4 pt-5 pb-[90px] flex flex-col gap-5">
+      <motion.div
+        className="flex-1 px-4 pt-5 pb-[90px] flex flex-col gap-5"
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+      >
 
         {/* ── 2. Badges ─────────────────────────────────────────────────────── */}
-        <div>
+        <motion.div variants={staggerChild}>
           <p className="text-[16px] font-bold mb-3">Badges</p>
-          <div
+          <motion.div
             className="flex gap-2.5 overflow-x-auto"
             style={{ scrollbarWidth: 'none' } as React.CSSProperties}
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
           >
             {BADGES.map((badge) => (
-              <div
+              <motion.div
                 key={badge.name}
+                variants={staggerChild}
                 className="shrink-0 w-20 bg-white rounded-2xl border border-[#f0f0f0] py-3 flex flex-col items-center gap-1.5"
                 style={{ opacity: badge.locked ? 0.4 : 1 }}
               >
@@ -184,98 +204,131 @@ export default function Profile() {
                 <span className="text-[10px] text-gray-500 font-medium text-center leading-snug px-1">
                   {badge.name}
                 </span>
-              </div>
+              </motion.div>
             ))}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* ── 3. Goals ──────────────────────────────────────────────────────── */}
-        <div>
+        <motion.div variants={staggerChild}>
           <SectionLabel>Goals</SectionLabel>
-          <div className="bg-white rounded-2xl border border-[#f0f0f0] overflow-hidden">
-            <SettingsRow
-              iconBg="#d1fae5"
-              icon={<Target size={16} className="text-tint" />}
-              label="Weekly workout goal"
-              sublabel="How many sessions per week"
-              rightValue="5 days"
-            />
+          <motion.div
+            className="bg-white rounded-2xl border border-[#f0f0f0] overflow-hidden"
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+          >
+            <motion.div variants={staggerChild}>
+              <SettingsRow
+                iconBg="#d1fae5"
+                icon={<Target size={16} className="text-tint" />}
+                label="Weekly workout goal"
+                sublabel="How many sessions per week"
+                rightValue="5 days"
+              />
+            </motion.div>
             <Divider />
-            <SettingsRow
-              iconBg="#fef3c7"
-              icon={<Dumbbell size={16} className="text-amber-500" />}
-              label="Volume goal"
-              sublabel="Target kg lifted per week"
-              rightValue="10,000 kg"
-            />
-          </div>
-        </div>
+            <motion.div variants={staggerChild}>
+              <SettingsRow
+                iconBg="#fef3c7"
+                icon={<Dumbbell size={16} className="text-amber-500" />}
+                label="Volume goal"
+                sublabel="Target kg lifted per week"
+                rightValue="10,000 kg"
+              />
+            </motion.div>
+          </motion.div>
+        </motion.div>
 
         {/* ── 4. Preferences ────────────────────────────────────────────────── */}
-        <div>
+        <motion.div variants={staggerChild}>
           <SectionLabel>Preferences</SectionLabel>
-          <div className="bg-white rounded-2xl border border-[#f0f0f0] overflow-hidden">
-            <SettingsRow
-              iconBg="#dbeafe"
-              icon={<Dumbbell size={16} className="text-blue-500" />}
-              label="Weight unit"
-              rightValue="kg"
-            />
+          <motion.div
+            className="bg-white rounded-2xl border border-[#f0f0f0] overflow-hidden"
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+          >
+            <motion.div variants={staggerChild}>
+              <SettingsRow
+                iconBg="#dbeafe"
+                icon={<Dumbbell size={16} className="text-blue-500" />}
+                label="Weight unit"
+                rightValue="kg"
+              />
+            </motion.div>
             <Divider />
-            <SettingsRow
-              iconBg="#d1fae5"
-              icon={<Clock size={16} className="text-tint" />}
-              label="Default rest timer"
-              rightValue="90s"
-            />
+            <motion.div variants={staggerChild}>
+              <SettingsRow
+                iconBg="#d1fae5"
+                icon={<Clock size={16} className="text-tint" />}
+                label="Default rest timer"
+                rightValue="90s"
+              />
+            </motion.div>
             <Divider />
-            <SettingsRow
-              iconBg="#ede9fe"
-              icon={<Coffee size={16} className="text-purple-500" />}
-              label="Dark mode"
-              rightElement={
-                <Toggle on={darkMode} onToggle={() => setDarkMode((v) => !v)} />
-              }
-            />
+            <motion.div variants={staggerChild}>
+              <SettingsRow
+                iconBg="#ede9fe"
+                icon={<Coffee size={16} className="text-purple-500" />}
+                label="Dark mode"
+                rightElement={
+                  <Toggle on={darkMode} onToggle={() => setDarkMode((v) => !v)} />
+                }
+              />
+            </motion.div>
             <Divider />
-            <SettingsRow
-              iconBg="#fef3c7"
-              icon={<Bell size={16} className="text-amber-500" />}
-              label="Workout reminders"
-              rightElement={
-                <Toggle on={reminders} onToggle={() => setReminders((v) => !v)} />
-              }
-            />
-          </div>
-        </div>
+            <motion.div variants={staggerChild}>
+              <SettingsRow
+                iconBg="#fef3c7"
+                icon={<Bell size={16} className="text-amber-500" />}
+                label="Workout reminders"
+                rightElement={
+                  <Toggle on={reminders} onToggle={() => setReminders((v) => !v)} />
+                }
+              />
+            </motion.div>
+          </motion.div>
+        </motion.div>
 
         {/* ── 5. Account ────────────────────────────────────────────────────── */}
-        <div>
+        <motion.div variants={staggerChild}>
           <SectionLabel>Account</SectionLabel>
-          <div className="bg-white rounded-2xl border border-[#f0f0f0] overflow-hidden">
-            <SettingsRow
-              iconBg="#dbeafe"
-              icon={<User size={16} className="text-blue-500" />}
-              label="Edit profile"
-            />
+          <motion.div
+            className="bg-white rounded-2xl border border-[#f0f0f0] overflow-hidden"
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+          >
+            <motion.div variants={staggerChild}>
+              <SettingsRow
+                iconBg="#dbeafe"
+                icon={<User size={16} className="text-blue-500" />}
+                label="Edit profile"
+              />
+            </motion.div>
             <Divider />
-            <SettingsRow
-              iconBg="#d1fae5"
-              icon={<Code2 size={16} className="text-tint" />}
-              label="Export data"
-              sublabel="Download your workout history"
-            />
+            <motion.div variants={staggerChild}>
+              <SettingsRow
+                iconBg="#d1fae5"
+                icon={<Code2 size={16} className="text-tint" />}
+                label="Export data"
+                sublabel="Download your workout history"
+              />
+            </motion.div>
             <Divider />
-            <SettingsRow
-              iconBg="#fee2e2"
-              icon={<Power size={16} className="text-red-500" />}
-              label="Log out"
-              danger
-            />
-          </div>
-        </div>
+            <motion.div variants={staggerChild}>
+              <SettingsRow
+                iconBg="#fee2e2"
+                icon={<Power size={16} className="text-red-500" />}
+                label="Log out"
+                danger
+              />
+            </motion.div>
+          </motion.div>
+        </motion.div>
 
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

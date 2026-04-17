@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { Clock, Dumbbell, CheckSquare } from 'lucide-react';
+import { motion } from 'framer-motion';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
+import {
+  screenEnter, staggerContainer, staggerChild, press,
+} from '@/animations/fitnex.variants';
 
 dayjs.extend(isoWeek);
 
@@ -109,7 +113,6 @@ function MonthlyHeatmap() {
   const days = Array.from({ length: daysInMonth }, (_, i) => {
     const day = today.startOf('month').add(i, 'day');
     const isFuture = day.isAfter(today, 'day');
-    // Check if any mock workout falls on this day
     const hasWorkout = MOCK_WORKOUTS.some((w) => w._date.isSame(day, 'day'));
     if (isFuture) return 0;
     if (hasWorkout) return Math.floor(seededRand(i) * 3) + 1;
@@ -138,7 +141,11 @@ function WorkoutCard({ workout }: { workout: MockWorkout }) {
   const extra = workout.exercises.length - 2;
 
   return (
-    <div className="bg-white rounded-2xl border border-[#f0f0f0] px-4 py-4 cursor-pointer active:opacity-80 transition-opacity">
+    <motion.div
+      className="bg-white rounded-2xl border border-[#f0f0f0] px-4 py-4 cursor-pointer"
+      variants={staggerChild}
+      whileTap={press.whileTap}
+    >
 
       {/* Top row */}
       <div className="flex items-start justify-between gap-2 mb-3">
@@ -200,7 +207,7 @@ function WorkoutCard({ workout }: { workout: MockWorkout }) {
           </span>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -249,7 +256,13 @@ export default function History() {
   const streak      = 4; // hardcoded mock streak
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <motion.div
+      className="flex flex-col min-h-screen"
+      variants={screenEnter}
+      initial="initial"
+      animate="animate"
+      exit={{ opacity: 0, transition: { duration: 0.15 } }}
+    >
 
       {/* ── 1. Header ─────────────────────────────────────────────────────── */}
       <header className="bg-white px-5 pt-12 pb-0">
@@ -260,9 +273,8 @@ export default function History() {
           className="flex gap-2 overflow-x-auto pb-3"
           style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
-          <style>{`.no-scrollbar::-webkit-scrollbar { display: none; }`}</style>
           {FILTER_PILLS.map((pill) => (
-            <button
+            <motion.button
               key={pill}
               onClick={() => setActiveFilter(pill)}
               className={`shrink-0 px-4 py-1.5 rounded-full text-[13px] font-semibold border transition-colors ${
@@ -270,18 +282,27 @@ export default function History() {
                   ? 'bg-tint text-white border-tint'
                   : 'bg-white text-gray-500 border-gray-200'
               }`}
+              whileTap={press.whileTap}
             >
               {pill}
-            </button>
+            </motion.button>
           ))}
         </div>
       </header>
 
       {/* ── Scrollable body ───────────────────────────────────────────────── */}
-      <div className="flex-1 px-4 pt-4 pb-[90px] flex flex-col gap-5">
+      <motion.div
+        className="flex-1 px-4 pt-4 pb-[90px] flex flex-col gap-5"
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+      >
 
         {/* ── 2. Monthly Summary Card ───────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
+        <motion.div
+          variants={staggerChild}
+          className="bg-white rounded-2xl border border-[#f0f0f0] p-4"
+        >
           <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">
             {monthLabel}
           </p>
@@ -316,13 +337,13 @@ export default function History() {
             </p>
             <MonthlyHeatmap />
           </div>
-        </div>
+        </motion.div>
 
         {/* ── 3. Workout groups ─────────────────────────────────────────────── */}
         {groups.map((group) => {
           const groupVol = group.workouts.reduce((a, w) => a + totalVolume(w), 0);
           return (
-            <div key={group.label}>
+            <motion.div key={group.label} variants={staggerChild}>
               {/* Week label row */}
               <div className="flex items-center justify-between mb-2.5 px-0.5">
                 <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
@@ -334,16 +355,21 @@ export default function History() {
               </div>
 
               {/* Cards */}
-              <div className="flex flex-col gap-3">
+              <motion.div
+                className="flex flex-col gap-3"
+                variants={staggerContainer}
+                initial="initial"
+                animate="animate"
+              >
                 {group.workouts.map((w) => (
                   <WorkoutCard key={w.id} workout={w} />
                 ))}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           );
         })}
 
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
