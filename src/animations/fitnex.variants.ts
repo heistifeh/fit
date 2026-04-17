@@ -109,3 +109,22 @@ export const cardHover = {
 export const press = {
   whileTap: { scale: 0.96, transition: SPRING.snappy as Transition },
 };
+
+// Slide in from right — drill-down navigation (push)
+export const slideRight: Variants = {
+  initial: { x: "100%" },
+  animate: { x: 0,      transition: { ...SPRING.snappy } },
+  exit:    { x: "100%", transition: { duration: 0.25, ease: [0.7, 0, 0.84, 0] } },
+};
+
+// Stagger container for dense lists (sets rows) — tighter 0.03s delay
+export const setRowStagger: Variants = {
+  initial: {},
+  animate: { transition: { staggerChildren: 0.03, delayChildren: 0.05, when: "beforeChildren" } },
+};
+
+// Set row child — quick fade-in
+export const setRowChild: Variants = {
+  initial: { opacity: 0, x: 8 },
+  animate: { opacity: 1, x: 0, transition: { ...SPRING.soft } },
+};

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuthContext } from '@/context/AuthContext';
 import Layout from '@/components/general/Layout';
@@ -13,7 +13,7 @@ import CurrentWorkout from '@/pages/CurrentWorkout';
 import WorkoutDetail  from '@/pages/WorkoutDetail';
 import WorkoutSummary from '@/pages/WorkoutSummary';
 
-// ─── App shell (BrowserRouter + routes) ──────────────────────────────────────
+// ─── App shell (MemoryRouter ensures we always boot at /) ────────────────────
 
 function AnimatedRoutes({ showGuestNudge }: { showGuestNudge: boolean }) {
   const location = useLocation();
@@ -41,9 +41,9 @@ function AnimatedRoutes({ showGuestNudge }: { showGuestNudge: boolean }) {
 
 function AppShell({ showGuestNudge }: { showGuestNudge: boolean }) {
   return (
-    <BrowserRouter>
+    <MemoryRouter initialEntries={['/']} initialIndex={0}>
       <AnimatedRoutes showGuestNudge={showGuestNudge} />
-    </BrowserRouter>
+    </MemoryRouter>
   );
 }
 

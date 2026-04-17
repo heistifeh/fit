@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Dumbbell } from 'lucide-react';
 import { overlayFade, sheetSlide, press } from '@/animations/fitnex.variants';
 import { useAuthContext } from '@/context/AuthContext';
-import useStore from '@/store';
 
 // ─── Perk row ─────────────────────────────────────────────────────────────────
 
@@ -27,19 +26,16 @@ type GuestNudgeBannerProps = {
 
 export function GuestNudgeBanner({ showBanner }: GuestNudgeBannerProps) {
   const { mode, setMode } = useAuthContext();
-  const workouts           = useStore((s) => s.workouts);
-  const workoutCount       = workouts.length;
 
   const [showSheet, setShowSheet] = useState(false);
 
-  // Auto-trigger after first workout completion
+  // Show immediately on guest entry (once per session)
   useEffect(() => {
-    const dismissed = localStorage.getItem('nudgeDismissed');
-    if (mode === 'guest' && workoutCount >= 1 && !dismissed) {
+    if (mode === 'guest' && !localStorage.getItem('nudgeDismissed')) {
       const t = setTimeout(() => setShowSheet(true), 600);
       return () => clearTimeout(t);
     }
-  }, [workoutCount, mode]);
+  }, []);
 
   const dismissSheet = () => {
     localStorage.setItem('nudgeDismissed', 'true');

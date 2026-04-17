@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Clock, Dumbbell, CheckSquare } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import {
   screenEnter, staggerContainer, staggerChild, press,
 } from '@/animations/fitnex.variants';
+import WorkoutDetailScreen, {
+  type WorkoutDetail, type DetailExercise, type DetailSet,
+} from './WorkoutDetailScreen';
 
 dayjs.extend(isoWeek);
 
@@ -104,6 +107,90 @@ const seededRand = (seed: number) => {
   return x - Math.floor(x);
 };
 
+// ─── Adapter: MockWorkout → WorkoutDetail ─────────────────────────────────────
+
+function toWorkoutDetail(w: MockWorkout): WorkoutDetail {
+  // All workouts with a higher id are older (id=1 is newest, id=8 is oldest)
+  const olderWorkouts = MOCK_WORKOUTS.filter((o) => o.id > w.id);
+
+  // Best weight per exercise name across older workouts
+  const histMax: Record<string, number> = {};
+  for (const old of olderWorkouts) {
+    for (const ex of old.exercises) {
+      const max = Math.max(...ex.sets.map((s) => s.kg));
+      histMax[ex.name] = Math.max(histMax[ex.name] ?? 0, max);
+    }
+  }
+
+  // Build exercises with PR flags
+  let prExercise: string | undefined;
+  let prKg: number | undefined;
+  let prReps: number | undefined;
+
+  const exercises: DetailExercise[] = w.exercises.map((ex, exIdx) => {
+    const prevMax = histMax[ex.name] ?? 0;
+    const exerciseVolume = ex.sets.reduce((a, s) => a + s.kg * s.reps, 0);
+
+    const sets: DetailSet[] = ex.sets.map((s, i) => {
+      const isPR = s.kg > 0 && s.kg > prevMax;
+      if (isPR && prExercise === undefined) {
+        prExercise = ex.name;
+        prKg = s.kg;
+        prReps = s.reps;
+      }
+      return {
+        set_number: i + 1,
+        weight_kg: s.kg,
+        reps: s.reps,
+        is_completed: true,
+        is_pr: isPR,
+      };
+    });
+
+    return {
+      id: `${w.id}-${exIdx}`,
+      name: ex.name,
+      emoji: ex.emoji,
+      total_volume: exerciseVolume,
+      sets,
+    };
+  });
+
+  // Parse start time (e.g. "7:14 PM")
+  const [timePart, meridiem] = w.startTime.split(' ');
+  const [hoursStr, minutesStr] = timePart.split(':');
+  let hours = parseInt(hoursStr, 10);
+  const minutes = parseInt(minutesStr, 10);
+  if (meridiem === 'PM' && hours !== 12) hours += 12;
+  if (meridiem === 'AM' && hours === 12) hours = 0;
+
+  const startDayjs = w._date.hour(hours).minute(minutes).second(0);
+  const finishDayjs = startDayjs.add(w.durationSeconds, 'second');
+
+  // Days ago label
+  const diffDays = today.diff(w._date, 'day');
+  const daysAgoLabel =
+    diffDays === 0 ? 'today' :
+    diffDays === 1 ? 'yesterday' :
+    `${diffDays} days ago`;
+
+  return {
+    id: String(w.id),
+    date: w.date,
+    started_at: w.startTime,
+    finished_at: finishDayjs.format('h:mm A'),
+    duration_secs: w.durationSeconds,
+    total_volume_kg: totalVolume(w),
+    total_sets: totalSets(w),
+    hasPR: w.hasPR,
+    prExercise,
+    prKg,
+    prReps,
+    days_ago_label: daysAgoLabel,
+    exercises,
+  };
+}
+
 // ─── Heatmap ──────────────────────────────────────────────────────────────────
 
 const HEAT_COLORS = ['#f0f0f0', '#d1fae5', '#6ee7b7', '#10B981'];
@@ -134,7 +221,7 @@ function MonthlyHeatmap() {
 
 // ─── WorkoutCard ──────────────────────────────────────────────────────────────
 
-function WorkoutCard({ workout }: { workout: MockWorkout }) {
+function WorkoutCard({ workout, onClick }: { workout: MockWorkout; onClick: () => void }) {
   const vol  = totalVolume(workout);
   const sets = totalSets(workout);
   const shown = workout.exercises.slice(0, 2);
@@ -142,6 +229,7 @@ function WorkoutCard({ workout }: { workout: MockWorkout }) {
 
   return (
     <motion.div
+      onClick={onClick}
       className="bg-white rounded-2xl border border-[#f0f0f0] px-4 py-4 cursor-pointer"
       variants={staggerChild}
       whileTap={press.whileTap}
@@ -217,6 +305,7 @@ const FILTER_PILLS = ['All', 'This week', 'This month', 'Push', 'Pull', 'Legs'];
 
 export default function History() {
   const [activeFilter, setActiveFilter] = useState('All');
+  const [selectedWorkout, setSelectedWorkout] = useState<MockWorkout | null>(null);
 
   // ── Group workouts by week ────────────────────────────────────────────────
   const thisWeekStart = today.startOf('week');
@@ -256,6 +345,7 @@ export default function History() {
   const streak      = 4; // hardcoded mock streak
 
   return (
+    <>
     <motion.div
       className="flex flex-col min-h-screen"
       variants={screenEnter}
@@ -362,7 +452,7 @@ export default function History() {
                 animate="animate"
               >
                 {group.workouts.map((w) => (
-                  <WorkoutCard key={w.id} workout={w} />
+                  <WorkoutCard key={w.id} workout={w} onClick={() => setSelectedWorkout(w)} />
                 ))}
               </motion.div>
             </motion.div>
@@ -371,5 +461,15 @@ export default function History() {
 
       </motion.div>
     </motion.div>
+
+    <AnimatePresence>
+      {selectedWorkout && (
+        <WorkoutDetailScreen
+          workout={toWorkoutDetail(selectedWorkout)}
+          onBack={() => setSelectedWorkout(null)}
+        />
+      )}
+    </AnimatePresence>
+    </>
   );
 }
