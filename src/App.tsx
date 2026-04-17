@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuthContext } from '@/context/AuthContext';
 import Layout from '@/components/general/Layout';
-import { GuestNudgeSheet } from '@/components/general/GuestNudgeBanner';
 import SplashScreen   from '@/pages/auth/SplashScreen';
 import SignUpScreen   from '@/pages/auth/SignUpScreen';
 import SignInScreen   from '@/pages/auth/SignInScreen';
@@ -36,8 +35,6 @@ function AnimatedRoutes({ showGuestNudge }: { showGuestNudge: boolean }) {
         </Routes>
       </AnimatePresence>
 
-      {/* Guest nudge sheet (fixed overlay — renders outside route tree) */}
-      {showGuestNudge && <GuestNudgeSheet />}
     </>
   );
 }
