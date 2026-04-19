@@ -9,7 +9,7 @@ import dayjs from 'dayjs';
 import { WorkoutWithExercises } from '@/types/models';
 import { getWorkoutTotalWeight } from '@/services/workoutService';
 import {
-  screenEnter, staggerContainer, staggerChild, press,
+  screenEnter, staggerContainer, staggerChild, press, overlayFade, sheetSlide,
 } from '@/animations/fitnex.variants';
 import { usePreferences } from '@/context/PreferencesContext';
 import { formatWeight } from '@/utils/weight';
@@ -81,24 +81,39 @@ export default function Home() {
   const storeWorkouts  = useStore((s) => s.workouts);          // guest / local
   const { weightUnit } = usePreferences();
   const { mode, profile, user } = useAuthContext();
-  const displayName = mode === 'guest' ? 'Lifter' : (profile?.name || 'You');
+  const displayName = mode === 'guest' ? 'Lifter' : (profile?.name || user?.user_metadata?.name || 'there');
 
   const isAuth  = mode === 'authenticated';
   const isGuest = mode === 'guest';
 
   // ── Supabase data (authenticated only) ─────────────────────────────────────
-  const [dbWorkouts, setDbWorkouts] = useState<WorkoutWithExercisesAndSets[]>([]);
-  const [loading,    setLoading]    = useState(mode === 'authenticated');
+  const [dbWorkouts,         setDbWorkouts]         = useState<WorkoutWithExercisesAndSets[]>([]);
+  const [loading,            setLoading]            = useState(mode === 'authenticated');
+  const [fetchError,         setFetchError]         = useState(false);
+  const [showNotifications,  setShowNotifications]  = useState(false);
+  const [toast,              setToast]              = useState<string | null>(null);
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3500); };
+
+  const fetchHomeWorkouts = () => {
+    if (!user) return;
+    setLoading(true);
+    setFetchError(false);
+    const minDelay = new Promise<void>((res) => setTimeout(res, 300));
+    Promise.all([minDelay, getWorkouts(user.id)])
+      .then(([, data]) => setDbWorkouts(data))
+      .catch((err) => {
+        console.error('Home: failed to load workouts', err);
+        setFetchError(true);
+        showToast("Couldn't load workouts — tap retry");
+      })
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
     if (!isAuth || !user) { setLoading(false); return; }
-    const minDelay = new Promise<void>((res) => setTimeout(res, 300));
-    const dataFetch = getWorkouts(user.id);
-    Promise.all([minDelay, dataFetch])
-      .then(([, data]) => setDbWorkouts(data))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, [isAuth, user]);
+    fetchHomeWorkouts();
+  }, [isAuth, user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onStart = () => { startWorkout(); navigate('/workout/current'); };
 
@@ -163,6 +178,7 @@ export default function Home() {
           </h1>
         </div>
         <motion.button
+          onClick={() => setShowNotifications(true)}
           className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center mt-1"
           whileTap={press.whileTap}
         >
@@ -450,7 +466,69 @@ export default function Home() {
           })()}
         </motion.div>
 
+        {/* ── Fetch error retry ───────────────────────────────────────── */}
+        {fetchError && !loading && (
+          <div className="flex flex-col items-center gap-2 py-6">
+            <p className="text-sm text-gray-400">Couldn't load your workouts</p>
+            <button
+              onClick={fetchHomeWorkouts}
+              className="text-tint text-sm font-bold"
+            >
+              Tap to retry
+            </button>
+          </div>
+        )}
+
         <div className="pb-6" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Notifications sheet ──────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showNotifications && (
+          <div className="fixed inset-0 z-50 flex flex-col justify-end">
+            <motion.div
+              className="absolute inset-0 bg-black/60"
+              variants={overlayFade}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              onClick={() => setShowNotifications(false)}
+            />
+            <motion.div
+              className="relative bg-white dark:bg-[#111] rounded-t-3xl w-full px-5 pt-4 pb-10"
+              variants={sheetSlide}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <div className="flex justify-center mb-4">
+                <div className="w-9 h-1 bg-gray-200 dark:bg-[#333] rounded-full" />
+              </div>
+              <p className="text-[18px] font-black text-gray-900 dark:text-white mb-5">Notifications</p>
+              <div className="flex flex-col items-center gap-3 py-8">
+                <span className="text-4xl">🔔</span>
+                <p className="font-bold text-[15px] text-gray-800 dark:text-white">No notifications yet</p>
+                <p className="text-[13px] text-gray-400 text-center leading-relaxed max-w-[240px]">
+                  We'll notify you about streaks, PRs and weekly summaries.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Toast ────────────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="fixed bottom-[100px] left-1/2 -translate-x-1/2 z-[70] bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[13px] font-semibold px-4 py-2.5 rounded-2xl shadow-lg whitespace-nowrap"
+          >
+            {toast}
           </motion.div>
         )}
       </AnimatePresence>

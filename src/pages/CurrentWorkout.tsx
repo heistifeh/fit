@@ -14,6 +14,7 @@ import {
   sheetSlide, overlayFade, press, SPRING,
 } from '@/animations/fitnex.variants';
 import { useAuthContext } from '@/context/AuthContext';
+import { usePreferences } from '@/context/PreferencesContext';
 import { getWorkouts } from '@/lib/supabase';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -221,6 +222,7 @@ export default function CurrentWorkout() {
   const removeExercise  = useStore((s) => s.removeExercise);
   const discardWorkout  = useStore((s) => s.discardWorkout);
   const { mode, user }  = useAuthContext();
+  const { restTimerSecs } = usePreferences();
 
   const [elapsed,    setElapsed]    = useState(0);
   const [isRunning,  setIsRunning]  = useState(true);
@@ -228,8 +230,10 @@ export default function CurrentWorkout() {
   const [restSeconds,  setRestSeconds]  = useState(0);
   const [showRest,     setShowRest]     = useState(false);
   const [addExOpen,    setAddExOpen]    = useState(false);
-  const [showFinishSheet, setShowFinishSheet] = useState(false);
+  const [showFinishSheet,  setShowFinishSheet]  = useState(false);
+  const [showEmptyWarning, setShowEmptyWarning] = useState(false);
   const [search,       setSearch]       = useState('');
+  const [dbStreak,     setDbStreak]     = useState(0);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const restRef  = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
@@ -270,7 +274,7 @@ export default function CurrentWorkout() {
     return map;
   }, [workouts]);
 
-  // Previous values from Supabase (authenticated users)
+  // Previous values + streak from Supabase (authenticated users)
   const [dbPreviousMap, setDbPreviousMap] = useState<Record<string, string | null>>({});
   useEffect(() => {
     if (mode !== 'authenticated' || !user) return;
@@ -285,6 +289,12 @@ export default function CurrentWorkout() {
         }
       }
       setDbPreviousMap(map);
+      // Compute streak from DB workouts
+      const days = new Set(dbWorkouts.map((w) => dayjs(w.started_at).format('YYYY-MM-DD')));
+      let s = 0; let cur = dayjs();
+      while (days.has(cur.format('YYYY-MM-DD'))) { s++; cur = cur.subtract(1, 'day'); }
+      if (s === 0) { cur = dayjs().subtract(1, 'day'); while (days.has(cur.format('YYYY-MM-DD'))) { s++; cur = cur.subtract(1, 'day'); } }
+      setDbStreak(s);
     }).catch(console.error);
   }, [mode, user]);
 
@@ -299,7 +309,7 @@ export default function CurrentWorkout() {
         next.delete(setId);
       } else {
         next.add(setId);
-        setRestSeconds(90);
+        setRestSeconds(restTimerSecs);
         setShowRest(true);
       }
       return next;
@@ -329,6 +339,15 @@ export default function CurrentWorkout() {
       };
     }).filter((ex) => ex.sets.length > 0);
 
+    // Compute streak for share card: DB users use dbStreak, guests use local store
+    const localStreak = (() => {
+      const days = new Set(workouts.map((w) => dayjs(w.createdAt).format('YYYY-MM-DD')));
+      let s = 0; let cur = dayjs();
+      while (days.has(cur.format('YYYY-MM-DD'))) { s++; cur = cur.subtract(1, 'day'); }
+      if (s === 0) { cur = dayjs().subtract(1, 'day'); while (days.has(cur.format('YYYY-MM-DD'))) { s++; cur = cur.subtract(1, 'day'); } }
+      return s;
+    })();
+
     return {
       date:            dayjs(currentWorkout.createdAt).format('ddd, D MMM'),
       startTime:       dayjs(currentWorkout.createdAt).format('h:mm A'),
@@ -337,7 +356,24 @@ export default function CurrentWorkout() {
                          : new Date(currentWorkout.createdAt).toISOString(),
       durationSeconds: elapsed,
       exercises:       summaryExercises,
+      streak:          mode === 'authenticated' ? dbStreak : localStreak,
     };
+  };
+
+  const handleFinishPress = () => {
+    if (currentWorkout.exercises.length === 0) {
+      // No exercises at all — show the empty warning sheet
+      setShowEmptyWarning(true);
+      return;
+    }
+    const completedCount = currentWorkout.exercises.reduce(
+      (n, ex) => n + ex.sets.filter((s) => completedSetIds.has(s.id)).length, 0,
+    );
+    if (completedCount === 0) {
+      setShowEmptyWarning(true);
+      return;
+    }
+    setShowFinishSheet(true);
   };
 
   const handleConfirmSave = () => {
@@ -471,7 +507,7 @@ export default function CurrentWorkout() {
 
         {/* ── Finish button ─────────────────────────────────────────────── */}
         <motion.button
-          onClick={() => setShowFinishSheet(true)}
+          onClick={handleFinishPress}
           className="w-full bg-tint rounded-2xl py-[18px] flex items-center justify-center gap-2 font-black text-white text-[17px] shadow-[0_4px_20px_rgba(16,185,129,0.3)]"
           whileTap={press.whileTap}
         >
@@ -559,6 +595,62 @@ export default function CurrentWorkout() {
                 >
                   Discard workout
                 </motion.button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Empty / no-sets warning sheet ───────────────────────────────── */}
+      <AnimatePresence>
+        {showEmptyWarning && (
+          <div className="fixed inset-0 z-50 flex flex-col justify-end">
+            <motion.div
+              className="absolute inset-0 bg-black/70"
+              variants={overlayFade}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              onClick={() => setShowEmptyWarning(false)}
+            />
+            <motion.div
+              className="relative bg-white dark:bg-[#111] rounded-t-3xl w-full px-5 pt-5 pb-10"
+              variants={sheetSlide}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <div className="flex justify-center mb-4">
+                <div className="w-10 h-1 bg-gray-200 dark:bg-[#333] rounded-full" />
+              </div>
+              <p className="text-[20px] font-black text-gray-900 dark:text-white mb-1">
+                {currentWorkout.exercises.length === 0 ? 'No exercises added' : 'No sets completed'}
+              </p>
+              <p className="text-[14px] text-gray-400 font-medium mb-6">
+                {currentWorkout.exercises.length === 0
+                  ? 'Add at least one exercise before finishing.'
+                  : "You haven't completed any sets yet. Finish anyway or keep going?"}
+              </p>
+              <div className="flex flex-col gap-3">
+                <motion.button
+                  onClick={() => setShowEmptyWarning(false)}
+                  className="w-full bg-tint text-white font-black text-[16px] py-[17px] rounded-2xl"
+                  whileTap={press.whileTap}
+                >
+                  Keep going
+                </motion.button>
+                {currentWorkout.exercises.length > 0 && (
+                  <motion.button
+                    onClick={() => {
+                      setShowEmptyWarning(false);
+                      setTimeout(() => setShowFinishSheet(true), 180);
+                    }}
+                    className="w-full bg-white dark:bg-[#1a1a1a] text-gray-500 font-semibold text-[15px] py-[15px] rounded-2xl border border-gray-100 dark:border-[#333]"
+                    whileTap={press.whileTap}
+                  >
+                    Finish anyway
+                  </motion.button>
+                )}
               </div>
             </motion.div>
           </div>

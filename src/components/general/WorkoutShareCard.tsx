@@ -3,6 +3,8 @@ import { X, Download, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import { overlayFade, sheetSlide, prBurst, press } from '@/animations/fitnex.variants';
+import { useAuthContext } from '@/context/AuthContext';
+import { updateProfile } from '@/lib/supabase';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -84,6 +86,11 @@ function ShareCard({
   cardBgStyle,
   dotBorderColor,
 }: ShareCardInternalProps) {
+
+  // handle → "@handle", no handle → name
+  const byLine = handle && handle.trim()
+    ? (handle.startsWith('@') ? handle : `@${handle}`)
+    : name;
 
   const fillPct = Math.min(95, Math.max(5, 100 - weeklyRankPct));
   const streakDots = Array.from({ length: 10 }, (_, i) => i < streak ? 'orange' : 'dark');
@@ -238,7 +245,7 @@ function ShareCard({
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <div style={{ padding: '12px 24px 20px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <p style={{ color: '#ffffffaa', fontSize: 12, fontWeight: 500 }}>
-          by <span style={{ color: '#10B981', fontWeight: 700 }}>{handle}</span>
+          by <span style={{ color: '#10B981', fontWeight: 700 }}>{byLine}</span>
         </p>
         <p style={{ color: '#ffffff33', fontSize: 12, fontWeight: 600 }}>fitnex.app</p>
       </div>
@@ -312,16 +319,48 @@ export default function WorkoutShareCard(props: ShareCardProps) {
   const { onClose, handle, date, durationMinutes, totalVolume, totalSets,
           streak, hasPR, prExercise, prKg, prReps } = props;
 
-  const cardRef     = useRef<HTMLDivElement>(null);
+  const { user, refreshProfile } = useAuthContext();
+
+  const cardRef      = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [saving,           setSaving]           = useState(false);
-  const [isGenerating,     setIsGenerating]     = useState(false);
-  const [showInstructions, setShowInstructions] = useState(false);
-  const [bgType,           setBgType]           = useState<BackgroundType>('dark');
-  const [bgPhotoUrl,       setBgPhotoUrl]       = useState<string | null>(null);
+  const [saving,            setSaving]            = useState(false);
+  const [isGenerating,      setIsGenerating]      = useState(false);
+  const [showInstructions,  setShowInstructions]  = useState(false);
+  const [exportError,       setExportError]       = useState('');
+  const [bgType,            setBgType]            = useState<BackgroundType>('dark');
+  const [bgPhotoUrl,        setBgPhotoUrl]        = useState<string | null>(null);
+  // Handle prompt
+  const [displayHandle,     setDisplayHandle]     = useState(handle);
+  const [showHandlePrompt,  setShowHandlePrompt]  = useState(false);
+  const [handleInput,       setHandleInput]       = useState('');
+  const [savingHandle,      setSavingHandle]      = useState(false);
+  const [handleToast,       setHandleToast]       = useState(false);
+
+  // Keep displayHandle in sync if parent updates the prop (e.g. after refreshProfile)
+  useEffect(() => { setDisplayHandle(handle); }, [handle]);
 
   const weeklyRankPct = getPercentile(totalVolume);
+
+  const handleSaveHandle = async () => {
+    const trimmed = handleInput.trim().replace(/^@+/, '');
+    if (!trimmed || !user?.id) return;
+    setSavingHandle(true);
+    try {
+      const newHandle = `@${trimmed}`;
+      await updateProfile(user.id, { handle: newHandle });
+      setDisplayHandle(newHandle);
+      setShowHandlePrompt(false);
+      setHandleInput('');
+      setHandleToast(true);
+      setTimeout(() => setHandleToast(false), 3000);
+      refreshProfile();
+    } catch (err) {
+      console.error('Failed to save handle:', err);
+    } finally {
+      setSavingHandle(false);
+    }
+  };
 
   // Revoke object URL on unmount to avoid memory leaks
   useEffect(() => {
@@ -363,13 +402,21 @@ export default function WorkoutShareCard(props: ShareCardProps) {
   const cardBgStyle   = getCardBg(bgType, bgPhotoUrl);
   const dotBorderColor = getDotBorder(bgType);
 
+  const showExportError = (msg: string) => {
+    setExportError(msg);
+    setTimeout(() => setExportError(''), 3500);
+  };
+
   const generateAndDownload = async (filename: string) => {
     if (!cardRef.current) return;
     const canvas = await html2canvas(cardRef.current, {
       scale: 3,
       backgroundColor: null,
+      // For photo backgrounds use allowTaint so the object URL renders;
+      // for all other backgrounds useCORS is safe and avoids canvas tainting.
       useCORS: bgType !== 'photo',
       allowTaint: bgType === 'photo',
+      imageTimeout: 8000,
       logging: false,
     });
     const link = document.createElement('a');
@@ -404,6 +451,7 @@ export default function WorkoutShareCard(props: ShareCardProps) {
       setShowInstructions(true);
     } catch (err) {
       console.error('Image generation failed:', err);
+      showExportError('Could not save image. Try a different background.');
     } finally {
       setIsGenerating(false);
     }
@@ -422,6 +470,9 @@ export default function WorkoutShareCard(props: ShareCardProps) {
     setSaving(true);
     try {
       await generateAndDownload(`fitnex-${date.replace(/[,\s]+/g, '-')}.png`);
+    } catch (err) {
+      console.error('Save image failed:', err);
+      showExportError('Could not save image. Try a different background.');
     } finally {
       setSaving(false);
     }
@@ -474,7 +525,7 @@ export default function WorkoutShareCard(props: ShareCardProps) {
             <ShareCard
               cardRef={cardRef}
               name={props.name}
-              handle={handle}
+              handle={displayHandle}
               date={date}
               durationMinutes={durationMinutes}
               totalVolume={totalVolume}
@@ -490,6 +541,41 @@ export default function WorkoutShareCard(props: ShareCardProps) {
               dotBorderColor={dotBorderColor}
             />
           </motion.div>
+
+          {/* ── Handle nudge ─────────────────────────────────────────────── */}
+          {!displayHandle && (
+            <div className="px-4 pb-4 shrink-0 flex justify-center">
+              <motion.button
+                onClick={() => { setHandleInput(''); setShowHandlePrompt(true); }}
+                className="w-full flex items-center gap-3 rounded-2xl border"
+                style={{
+                  background: '#141414',
+                  borderColor: '#2a2a2a',
+                  padding: '10px 14px',
+                  maxWidth: 400,
+                  textAlign: 'left',
+                }}
+                whileTap={press.whileTap}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.3 }}>
+                    Add your X handle
+                  </p>
+                  <p style={{ fontSize: 12, color: '#6b7280', margin: 0, lineHeight: 1.3 }}>
+                    Show your username on shared cards
+                  </p>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2">
+                  <polyline points="9,18 15,12 9,6"/>
+                </svg>
+              </motion.button>
+            </div>
+          )}
 
           {/* ── Background picker ────────────────────────────────────────── */}
           <div className="px-4 pb-5 shrink-0">
@@ -612,6 +698,103 @@ export default function WorkoutShareCard(props: ShareCardProps) {
           </div>
 
         </motion.div>
+
+        {/* ── Handle prompt sheet ─────────────────────────────────────────── */}
+        <AnimatePresence>
+          {showHandlePrompt && (
+            <div className="absolute inset-0 z-20 flex flex-col justify-end">
+              <motion.div
+                className="absolute inset-0"
+                style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
+                variants={overlayFade}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                onClick={() => setShowHandlePrompt(false)}
+              />
+              <motion.div
+                className="relative bg-white dark:bg-[#111] rounded-t-3xl w-full"
+                variants={sheetSlide}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <div style={{ padding: '24px 20px 12px', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" className="text-gray-900 dark:text-white">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                  </div>
+                  <h3 className="text-[18px] font-black text-gray-900 dark:text-white mb-1.5">
+                    Add your X handle
+                  </h3>
+                  <p className="text-[13px] text-gray-400 leading-relaxed mb-5">
+                    Your handle appears on every workout card you share.<br />
+                    You can change it anytime in your profile.
+                  </p>
+                </div>
+                <div style={{ padding: '0 20px 28px' }}>
+                  <div style={{ position: 'relative', marginBottom: 12 }}>
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] font-semibold text-gray-400">
+                      @
+                    </span>
+                    <input
+                      value={handleInput}
+                      onChange={(e) => setHandleInput(e.target.value.replace(/^@+/, ''))}
+                      placeholder="yourhandle"
+                      autoFocus
+                      className="w-full pl-8 pr-4 py-3.5 rounded-2xl border border-gray-200 dark:border-[#333] bg-[#f8f9fa] dark:bg-[#1a1a1a] text-gray-900 dark:text-white text-[15px] font-semibold outline-none focus:border-tint"
+                      onKeyDown={(e) => e.key === 'Enter' && handleSaveHandle()}
+                    />
+                  </div>
+                  <motion.button
+                    onClick={handleSaveHandle}
+                    disabled={savingHandle || !handleInput.trim()}
+                    className="w-full py-4 rounded-2xl font-black text-white text-[15px] mb-2 disabled:opacity-50"
+                    style={{ backgroundColor: '#10B981' }}
+                    whileTap={press.whileTap}
+                  >
+                    {savingHandle ? 'Saving…' : 'Save handle'}
+                  </motion.button>
+                  <button
+                    onClick={() => setShowHandlePrompt(false)}
+                    className="w-full py-3 text-[14px] text-gray-400 font-medium"
+                  >
+                    Skip for now
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Export error toast ───────────────────────────────────────────── */}
+        <AnimatePresence>
+          {exportError && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              className="absolute bottom-[120px] left-1/2 -translate-x-1/2 z-30 bg-red-600 text-white text-[13px] font-semibold px-4 py-2.5 rounded-2xl shadow-lg whitespace-nowrap"
+            >
+              {exportError}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── Handle saved toast ───────────────────────────────────────────── */}
+        <AnimatePresence>
+          {handleToast && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              className="absolute bottom-[120px] left-1/2 -translate-x-1/2 z-30 bg-gray-900 text-white text-[13px] font-semibold px-4 py-2.5 rounded-2xl shadow-lg whitespace-nowrap"
+            >
+              Handle saved ✓
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ── Instruction sheet (step 2) ──────────────────────────────────── */}
         <AnimatePresence>

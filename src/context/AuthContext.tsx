@@ -1,12 +1,14 @@
 import React, { createContext, useContext } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { usePreferences } from '@/context/PreferencesContext';
 
 type AuthContextType = ReturnType<typeof useAuth>;
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const auth = useAuth();
+  const { setWeightUnit, setRestTimerSecs, setDarkMode, setReminders } = usePreferences();
+  const auth = useAuth({ setWeightUnit, setRestTimerSecs, setDarkMode, setReminders });
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
 }
 

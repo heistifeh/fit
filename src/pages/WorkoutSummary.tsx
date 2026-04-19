@@ -36,6 +36,7 @@ export type WorkoutSummaryProps = {
   startedAt?: string;          // ISO — used for Supabase save
   durationSeconds: number;
   exercises: SummaryExercise[];
+  streak?: number;             // real streak from CurrentWorkout
   onSave?: () => void;
   onDiscard?: () => void;
 };
@@ -64,6 +65,7 @@ export default function WorkoutSummary() {
     startedAt,
     durationSeconds = 0,
     exercises = [],
+    streak = 0,
     onSave,
     onDiscard,
   } = props;
@@ -395,7 +397,7 @@ export default function WorkoutSummary() {
             durationMinutes={Math.round(durationSeconds / 60)}
             totalVolume={totalVolume}
             totalSets={totalSets}
-            streak={12}
+            streak={streak}
             hasPR={hasPR}
             prExercise={firstPRSet?.exerciseName ?? ''}
             prKg={firstPRSet?.kg ?? 0}

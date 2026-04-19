@@ -19,6 +19,8 @@ export type Profile = {
   rest_timer_secs:  number;
   dark_mode:        boolean;
   reminders:        boolean;
+  weekly_goal:      number;
+  volume_goal:      number;
   created_at:       string;
   updated_at:       string;
 };
@@ -201,6 +203,63 @@ export async function getWorkouts(
   }));
 }
 
+// ─── 1b. getWorkoutById ───────────────────────────────────────────────────────
+// Fetch a single workout by ID with nested exercises and sets.
+
+export async function getWorkoutById(
+  workoutId: string,
+): Promise<WorkoutWithExercisesAndSets | null> {
+  const { data: workout, error: workoutErr } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('id', workoutId)
+    .single();
+
+  if (workoutErr || !workout) return null;
+
+  const { data: exercises, error: exErr } = await supabase
+    .from('workout_exercises')
+    .select('*')
+    .eq('workout_id', workoutId)
+    .order('order_index', { ascending: true });
+
+  if (exErr || !exercises) return { ...(workout as Workout), exercises: [] };
+
+  const exerciseIds = exercises.map((e: WorkoutExercise) => e.id);
+
+  const { data: sets } =
+    exerciseIds.length > 0
+      ? await supabase
+          .from('workout_sets')
+          .select('*')
+          .in('workout_exercise_id', exerciseIds)
+          .order('set_number', { ascending: true })
+      : { data: [] as WorkoutSet[] };
+
+  const setsByExercise = new Map<string, WorkoutSetRow[]>();
+  for (const s of (sets ?? []) as WorkoutSet[]) {
+    const key = s.workout_exercise_id;
+    if (!setsByExercise.has(key)) setsByExercise.set(key, []);
+    setsByExercise.get(key)!.push({
+      id:           s.id,
+      set_number:   s.set_number,
+      weight_kg:    s.weight_kg,
+      reps:         s.reps,
+      one_rm:       s.one_rm,
+      is_completed: s.is_completed,
+      created_at:   s.created_at,
+    });
+  }
+
+  return {
+    ...(workout as Workout),
+    exercises: exercises.map((ex: WorkoutExercise) => ({
+      ...ex,
+      sets: setsByExercise.get(ex.id) ?? [],
+    })),
+  };
+}
+
 // ─── 2. saveWorkout ───────────────────────────────────────────────────────────
 // Insert a complete workout (exercises + sets) atomically via the save_workout RPC.
 // Returns the new workout id on success.
@@ -330,7 +389,24 @@ export async function updatePersonalRecords(
   }
 }
 
-// ─── 7. uploadAvatar ──────────────────────────────────────────────────────────
+// ─── 7. updateProfile ────────────────────────────────────────────────────────
+// Generic profile updater — pass only the fields you want to change.
+
+export async function updateProfile(
+  userId: string,
+  updates: Partial<Pick<Profile,
+    'name' | 'handle' | 'avatar_url' | 'weight_unit' | 'rest_timer_secs' |
+    'dark_mode' | 'reminders' | 'weekly_goal' | 'volume_goal'
+  >>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+// ─── 8. uploadAvatar ──────────────────────────────────────────────────────────
 // Upload an image to the avatars bucket, save the public URL to profiles,
 // and return the public URL.
 

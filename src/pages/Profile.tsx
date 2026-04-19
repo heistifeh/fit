@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import {
-  getWorkouts, getPersonalRecords, uploadAvatar,
+  getWorkouts, getPersonalRecords, uploadAvatar, updateProfile,
   type WorkoutWithExercisesAndSets, type PersonalRecord,
 } from '@/lib/supabase';
 import { getBadges } from '@/utils/badges';
@@ -259,9 +259,9 @@ function computeStreak(isoDates: string[]): number {
 
 export default function Profile() {
   usePageTitle('Profile');
-  const { mode, setMode, signOut, profile, user } = useAuthContext();
+  const { mode, setMode, signOut, profile, user, refreshProfile } = useAuthContext();
   const isGuest = mode === 'guest';
-  const displayName = isGuest ? 'Guest Lifter' : (profile?.name || 'You');
+  const displayName = isGuest ? 'Guest Lifter' : (profile?.name || user?.user_metadata?.name || 'You');
 
   const storeWorkouts = useStore((s) => s.workouts);
   const [dbWorkouts,  setDbWorkouts]  = useState<WorkoutWithExercisesAndSets[]>([]);
@@ -271,10 +271,20 @@ export default function Profile() {
   const [uploading,   setUploading]   = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync avatar from profile once it loads
+  // Sync avatar from profile once it loads, adding a cache-buster so the
+  // browser always fetches the latest image rather than showing a stale cached one.
   useEffect(() => {
-    if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
+    if (profile?.avatar_url) {
+      const url = profile.avatar_url;
+      setAvatarUrl(url.includes('?') ? url : `${url}?t=${Date.now()}`);
+    }
   }, [profile?.avatar_url]);
+
+  // Sync goals from profile
+  useEffect(() => {
+    if (profile?.weekly_goal != null) setWeeklyGoalState(profile.weekly_goal);
+    if (profile?.volume_goal != null) setVolumeGoalState(profile.volume_goal);
+  }, [profile?.weekly_goal, profile?.volume_goal]);
 
   useEffect(() => {
     if (mode !== 'authenticated' || !user?.id) { setLoading(false); return; }
@@ -299,6 +309,7 @@ export default function Profile() {
       setAvatarUrl(url);
     } catch (err) {
       console.error('Avatar upload failed:', err);
+      showToast('Photo upload failed — try again');
     } finally {
       setUploading(false);
       e.target.value = '';
@@ -345,8 +356,18 @@ export default function Profile() {
   const [showExitGuestConfirm, setShowExitGuestConfirm] = useState(false);
   const [showWeightUnitSheet,  setShowWeightUnitSheet]  = useState(false);
   const [showRestTimerSheet,   setShowRestTimerSheet]   = useState(false);
+  const [showEditProfile,      setShowEditProfile]      = useState(false);
+  const [showWeeklyGoalSheet,  setShowWeeklyGoalSheet]  = useState(false);
+  const [showVolumeGoalSheet,  setShowVolumeGoalSheet]  = useState(false);
   const [customRest,           setCustomRest]           = useState('');
   const [showCustomRest,       setShowCustomRest]       = useState(false);
+  const [editName,             setEditName]             = useState('');
+  const [editHandle,           setEditHandle]           = useState('');
+  const [editSaving,           setEditSaving]           = useState(false);
+  const [weeklyGoal,           setWeeklyGoalState]      = useState<number | null>(profile?.weekly_goal ?? null);
+  const [volumeGoal,           setVolumeGoalState]      = useState<number | null>(profile?.volume_goal ?? null);
+  const [customVolume,         setCustomVolume]         = useState('');
+  const [showCustomVolume,     setShowCustomVolume]     = useState(false);
   const [toast,                setToast]                = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -365,6 +386,30 @@ export default function Profile() {
     signOut();
   };
 
+  const saveToSupabase = async (updates: Parameters<typeof updateProfile>[1]) => {
+    if (!user?.id) return;
+    try { await updateProfile(user.id, updates); } catch (err) { console.error('Profile update failed:', err); }
+  };
+
+  const handleWeightUnit = (unit: WeightUnit) => {
+    setWeightUnit(unit);
+    setShowWeightUnitSheet(false);
+    saveToSupabase({ weight_unit: unit });
+  };
+
+  const handleRestPreset = (secs: number) => {
+    setRestTimerSecs(secs);
+    setShowCustomRest(false);
+    setShowRestTimerSheet(false);
+    saveToSupabase({ rest_timer_secs: secs });
+  };
+
+  const handleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    saveToSupabase({ dark_mode: next });
+  };
+
   const handleRemindersToggle = () => {
     const next = !reminders;
     if (next) {
@@ -374,9 +419,11 @@ export default function Profile() {
           return;
         }
         setReminders(true);
+        saveToSupabase({ reminders: true });
       });
     } else {
       setReminders(false);
+      saveToSupabase({ reminders: false });
     }
   };
 
@@ -387,8 +434,68 @@ export default function Profile() {
       setShowRestTimerSheet(false);
       setShowCustomRest(false);
       setCustomRest('');
+      saveToSupabase({ rest_timer_secs: secs });
     }
   };
+
+  const handleSaveProfile = async () => {
+    if (!user?.id) return;
+    setEditSaving(true);
+    try {
+      const rawHandle = editHandle.trim().replace(/^@+/, '');
+      await updateProfile(user.id, {
+        name:   editName.trim() || undefined,
+        handle: rawHandle ? `@${rawHandle}` : null,
+      });
+      refreshProfile();
+      setShowEditProfile(false);
+      showToast('Profile saved');
+    } catch (err) {
+      console.error('Save profile failed:', err);
+      showToast('Failed to save — try again');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const handleWeeklyGoal = async (days: number) => {
+    setWeeklyGoalState(days);
+    setShowWeeklyGoalSheet(false);
+    await saveToSupabase({ weekly_goal: days });
+  };
+
+  const handleVolumeGoal = async (kg: number) => {
+    setVolumeGoalState(kg);
+    setShowVolumeGoalSheet(false);
+    setShowCustomVolume(false);
+    setCustomVolume('');
+    await saveToSupabase({ volume_goal: kg });
+  };
+
+  const handleCustomVolume = () => {
+    const kg = parseInt(customVolume, 10);
+    if (!isNaN(kg) && kg > 0) handleVolumeGoal(kg);
+  };
+
+  const handleExportData = async () => {
+    if (!user?.id) return;
+    try {
+      const workouts = await getWorkouts(user.id);
+      const blob = new Blob([JSON.stringify(workouts, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fitnex-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export failed:', err);
+      showToast('Export failed — try again');
+    }
+  };
+
+  const fmtWeeklyGoal = (days: number | null) => days != null ? `${days} day${days !== 1 ? 's' : ''}` : 'Not set';
+  const fmtVolumeGoal = (kg: number | null) => kg != null ? `${kg.toLocaleString()} kg` : 'Not set';
 
   return (
     <>
@@ -463,7 +570,7 @@ export default function Profile() {
                     }}
                   >
                     <span className="text-white font-black" style={{ fontSize: 30 }}>
-                      {profile?.name?.[0]?.toUpperCase() ?? 'F'}
+                      {(profile?.name || user?.user_metadata?.name || 'U')[0].toUpperCase()}
                     </span>
                   </div>
                 )}
@@ -498,7 +605,9 @@ export default function Profile() {
                 />
               </div>
               <h1 className="text-[20px] font-black leading-tight dark:text-white">{displayName}</h1>
-              <p className="text-[13px] text-gray-400 mt-0.5">Member since January 2025</p>
+              <p className="text-[13px] text-gray-400 mt-0.5">
+                {profile?.created_at ? `Member since ${dayjs(profile.created_at).format('MMMM YYYY')}` : 'New member'}
+              </p>
               <div className="flex items-center mt-5 w-full">
                 <div className="flex-1 flex flex-col items-center gap-0.5">
                   <span className="text-[20px] font-black tabular-nums leading-tight dark:text-white">
@@ -606,7 +715,8 @@ export default function Profile() {
                       icon={<Target size={16} className="text-tint" />}
                       label="Weekly workout goal"
                       sublabel="How many sessions per week"
-                      rightValue="5 days"
+                      rightValue={fmtWeeklyGoal(weeklyGoal)}
+                      onClick={() => setShowWeeklyGoalSheet(true)}
                     />
                   </motion.div>
                   <Divider />
@@ -616,7 +726,8 @@ export default function Profile() {
                       icon={<Dumbbell size={16} className="text-amber-500" />}
                       label="Volume goal"
                       sublabel="Target kg lifted per week"
-                      rightValue="10,000 kg"
+                      rightValue={fmtVolumeGoal(volumeGoal)}
+                      onClick={() => setShowVolumeGoalSheet(true)}
                     />
                   </motion.div>
                 </motion.div>
@@ -658,7 +769,7 @@ export default function Profile() {
                   iconBg="#ede9fe"
                   icon={<Coffee size={16} className="text-purple-500" />}
                   label="Dark mode"
-                  rightElement={<Toggle on={darkMode} onToggle={() => setDarkMode(!darkMode)} />}
+                  rightElement={<Toggle on={darkMode} onToggle={handleDarkMode} />}
                 />
               </motion.div>
               <Divider />
@@ -689,6 +800,11 @@ export default function Profile() {
                       iconBg="#dbeafe"
                       icon={<User size={16} className="text-blue-500" />}
                       label="Edit profile"
+                      onClick={() => {
+                        setEditName(profile?.name ?? '');
+                        setEditHandle(profile?.handle ?? '');
+                        setShowEditProfile(true);
+                      }}
                     />
                   </motion.div>
                   <Divider />
@@ -698,6 +814,7 @@ export default function Profile() {
                       icon={<Code2 size={16} className="text-tint" />}
                       label="Export data"
                       sublabel="Download your workout history"
+                      onClick={handleExportData}
                     />
                   </motion.div>
                   <Divider />
@@ -736,7 +853,7 @@ export default function Profile() {
             return (
               <motion.button
                 key={unit}
-                onClick={() => { setWeightUnit(unit); setShowWeightUnitSheet(false); }}
+                onClick={() => handleWeightUnit(unit)}
                 className="w-full flex items-center justify-between px-4 py-4 rounded-2xl border transition-colors"
                 style={{
                   backgroundColor: selected ? '#f0fdf4' : 'transparent',
@@ -771,11 +888,7 @@ export default function Profile() {
             return (
               <motion.button
                 key={secs}
-                onClick={() => {
-                  setRestTimerSecs(secs);
-                  setShowCustomRest(false);
-                  setShowRestTimerSheet(false);
-                }}
+                onClick={() => handleRestPreset(secs)}
                 className="py-3 rounded-2xl text-[14px] font-bold border transition-colors"
                 style={{
                   backgroundColor: selected ? '#10B981' : 'transparent',
@@ -821,6 +934,156 @@ export default function Profile() {
               />
               <motion.button
                 onClick={handleCustomRest}
+                className="px-5 py-3 rounded-2xl font-bold text-white text-[14px]"
+                style={{ backgroundColor: '#10B981' }}
+                whileTap={press.whileTap}
+              >
+                Set
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </BottomSheet>
+
+      {/* ── Edit profile sheet ──────────────────────────────────────────────── */}
+      <BottomSheet
+        open={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
+        title="Edit profile"
+      >
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="text-[12px] font-bold text-gray-400 dark:text-[#555] uppercase tracking-wide mb-1.5 block">
+              Name
+            </label>
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Your name"
+              className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 dark:border-[#333] bg-[#f8f9fa] dark:bg-[#1a1a1a] text-gray-900 dark:text-white text-[15px] font-semibold outline-none focus:border-tint"
+            />
+          </div>
+          <div>
+            <label className="text-[12px] font-bold text-gray-400 dark:text-[#555] uppercase tracking-wide mb-1.5 block">
+              Handle
+            </label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] font-semibold text-gray-400">
+                @
+              </span>
+              <input
+                type="text"
+                value={editHandle.replace(/^@+/, '')}
+                onChange={(e) => setEditHandle(e.target.value.replace(/^@+/, '').replace(/\s/g, ''))}
+                placeholder="yourhandle"
+                className="w-full pl-8 pr-4 py-3.5 rounded-2xl border border-gray-200 dark:border-[#333] bg-[#f8f9fa] dark:bg-[#1a1a1a] text-gray-900 dark:text-white text-[15px] font-semibold outline-none focus:border-tint"
+              />
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1.5 px-1">
+              This will appear on your shared workout cards on X
+            </p>
+          </div>
+          <motion.button
+            onClick={handleSaveProfile}
+            disabled={editSaving}
+            className="w-full py-[16px] rounded-2xl font-black text-white text-[16px] mt-1"
+            style={{ backgroundColor: editSaving ? '#9ca3af' : '#10B981' }}
+            whileTap={editSaving ? {} : press.whileTap}
+          >
+            {editSaving ? 'Saving…' : 'Save'}
+          </motion.button>
+        </div>
+      </BottomSheet>
+
+      {/* ── Weekly goal sheet ────────────────────────────────────────────────── */}
+      <BottomSheet
+        open={showWeeklyGoalSheet}
+        onClose={() => setShowWeeklyGoalSheet(false)}
+        title="Weekly workout goal"
+      >
+        <div className="grid grid-cols-4 gap-2.5">
+          {[1, 2, 3, 4, 5, 6, 7].map((days) => {
+            const selected = weeklyGoal === days;
+            return (
+              <motion.button
+                key={days}
+                onClick={() => handleWeeklyGoal(days)}
+                className="py-4 rounded-2xl text-[15px] font-black border transition-colors"
+                style={{
+                  backgroundColor: selected ? '#10B981' : 'transparent',
+                  borderColor: selected ? '#10B981' : '#e5e7eb',
+                  color: selected ? '#ffffff' : undefined,
+                }}
+                whileTap={press.whileTap}
+              >
+                <span className={selected ? 'text-white' : 'text-gray-800 dark:text-white'}>{days}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+        <p className="text-[12px] text-gray-400 text-center mt-3">days per week</p>
+      </BottomSheet>
+
+      {/* ── Volume goal sheet ────────────────────────────────────────────────── */}
+      <BottomSheet
+        open={showVolumeGoalSheet}
+        onClose={() => setShowVolumeGoalSheet(false)}
+        title="Weekly volume goal"
+      >
+        <div className="grid grid-cols-2 gap-2.5 mb-4">
+          {[5000, 8000, 10000, 15000, 20000].map((kg) => {
+            const selected = volumeGoal === kg && !showCustomVolume;
+            return (
+              <motion.button
+                key={kg}
+                onClick={() => handleVolumeGoal(kg)}
+                className="py-4 rounded-2xl text-[14px] font-bold border transition-colors"
+                style={{
+                  backgroundColor: selected ? '#10B981' : 'transparent',
+                  borderColor: selected ? '#10B981' : '#e5e7eb',
+                  color: selected ? '#ffffff' : undefined,
+                }}
+                whileTap={press.whileTap}
+              >
+                <span className={selected ? 'text-white' : 'text-gray-800 dark:text-white'}>
+                  {kg >= 1000 ? `${kg / 1000}k` : kg} kg
+                </span>
+              </motion.button>
+            );
+          })}
+          <motion.button
+            onClick={() => setShowCustomVolume(true)}
+            className="py-4 rounded-2xl text-[14px] font-bold border transition-colors"
+            style={{
+              backgroundColor: showCustomVolume ? '#10B981' : 'transparent',
+              borderColor: showCustomVolume ? '#10B981' : '#e5e7eb',
+              color: showCustomVolume ? '#ffffff' : undefined,
+            }}
+            whileTap={press.whileTap}
+          >
+            <span className={showCustomVolume ? 'text-white' : 'text-gray-800 dark:text-white'}>Custom</span>
+          </motion.button>
+        </div>
+        <AnimatePresence>
+          {showCustomVolume && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              className="flex gap-2"
+            >
+              <input
+                type="number"
+                placeholder="kg per week"
+                value={customVolume}
+                onChange={(e) => setCustomVolume(e.target.value)}
+                className="flex-1 px-4 py-3 rounded-2xl border border-gray-200 dark:border-[#333] bg-[#f8f9fa] dark:bg-[#1a1a1a] text-gray-900 dark:text-white text-[15px] font-semibold outline-none focus:border-tint"
+                onKeyDown={(e) => e.key === 'Enter' && handleCustomVolume()}
+                autoFocus
+              />
+              <motion.button
+                onClick={handleCustomVolume}
                 className="px-5 py-3 rounded-2xl font-bold text-white text-[14px]"
                 style={{ backgroundColor: '#10B981' }}
                 whileTap={press.whileTap}

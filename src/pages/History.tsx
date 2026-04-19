@@ -321,19 +321,33 @@ export default function History() {
 
   const [dbWorkouts, setDbWorkouts]   = useState<WorkoutWithExercisesAndSets[]>([]);
   const [loading, setLoading]         = useState(mode === 'authenticated');
+  const [fetchError, setFetchError]   = useState(false);
+  const [toast, setToast]             = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedEntry, setSelectedEntry] = useState<HistoryEntry | null>(null);
   const { weightUnit } = usePreferences();
 
-  useEffect(() => {
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3500);
+  };
+
+  const fetchHistoryWorkouts = () => {
     if (mode !== 'authenticated' || !user?.id) { setLoading(false); return; }
+    setLoading(true);
+    setFetchError(false);
     const minDelay = new Promise<void>((res) => setTimeout(res, 300));
     const dataFetch = getWorkouts(user.id);
     Promise.all([minDelay, dataFetch])
       .then(([, data]) => setDbWorkouts(data))
-      .catch((err) => console.error('History: failed to load workouts', err))
+      .catch(() => {
+        setFetchError(true);
+        showToast('Could not load history. Check your connection.');
+      })
       .finally(() => setLoading(false));
-  }, [mode, user?.id]);
+  };
+
+  useEffect(() => { fetchHistoryWorkouts(); }, [mode, user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Convert to unified HistoryEntry[] ────────────────────────────────────
   const allEntries: HistoryEntry[] =
@@ -424,6 +438,20 @@ export default function History() {
       </header>
 
       {/* ── Scrollable body ───────────────────────────────────────────────── */}
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="fixed bottom-[100px] left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white text-[13px] font-semibold px-4 py-2.5 rounded-2xl shadow-lg whitespace-nowrap"
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         {loading ? (
           <motion.div
@@ -434,6 +462,23 @@ export default function History() {
             transition={{ duration: 0.2 }}
           >
             <HistoryScreenSkeleton />
+          </motion.div>
+        ) : fetchError ? (
+          <motion.div
+            key="error"
+            className="flex-1 flex flex-col items-center justify-center gap-4 px-6 pt-16"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <p className="text-4xl">⚠️</p>
+            <p className="font-bold text-gray-700 dark:text-gray-200">Couldn't load history</p>
+            <p className="text-sm text-gray-400 text-center">Check your connection and try again.</p>
+            <button
+              onClick={fetchHistoryWorkouts}
+              className="mt-2 px-6 py-3 rounded-2xl bg-tint text-white font-bold text-[14px]"
+            >
+              Retry
+            </button>
           </motion.div>
         ) : (
           <motion.div

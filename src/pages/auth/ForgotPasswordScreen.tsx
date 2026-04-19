@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, AlertCircle, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthContext } from '@/context/AuthContext';
@@ -33,11 +33,19 @@ export default function ForgotPasswordScreen() {
   const { setMode, resetPassword } = useAuthContext();
   const { darkMode } = usePreferences();
 
-  const [email,      setEmail]      = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [loading,    setLoading]    = useState(false);
-  const [error,      setError]      = useState<string | null>(null);
-  const [emailSent,  setEmailSent]  = useState(false);
+  const [email,        setEmail]        = useState('');
+  const [emailError,   setEmailError]   = useState('');
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState<string | null>(null);
+  const [emailSent,    setEmailSent]    = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Count down the resend cooldown
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const canSubmit  = email !== '' && emailValid && !loading;
@@ -55,6 +63,7 @@ export default function ForgotPasswordScreen() {
     try {
       await resetPassword(email);
       setEmailSent(true);
+      setResendCooldown(60);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
@@ -115,10 +124,38 @@ export default function ForgotPasswordScreen() {
             </p>
             <button
               onClick={() => setMode('signin')}
-              style={{ width: '100%', background: '#10B981', border: 'none', borderRadius: 14, padding: 16, fontSize: 15, fontWeight: 800, color: '#fff', cursor: 'pointer' }}
+              style={{ width: '100%', background: '#10B981', border: 'none', borderRadius: 14, padding: 16, fontSize: 15, fontWeight: 800, color: '#fff', cursor: 'pointer', marginBottom: 12 }}
             >
               Back to sign in
             </button>
+            <button
+              onClick={async () => {
+                if (resendCooldown > 0 || loading) return;
+                setLoading(true);
+                setError(null);
+                try {
+                  await resetPassword(email);
+                  setResendCooldown(60);
+                } catch (err: unknown) {
+                  setError(err instanceof Error ? err.message : 'Could not resend. Try again.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={resendCooldown > 0 || loading}
+              style={{
+                width: '100%', background: 'none', border: 'none',
+                fontSize: 14, fontWeight: 600,
+                color: resendCooldown > 0 ? '#9ca3af' : '#10B981',
+                cursor: resendCooldown > 0 ? 'default' : 'pointer',
+                padding: '8px 0',
+              }}
+            >
+              {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Didn't get it? Resend email"}
+            </button>
+            {error && (
+              <p style={{ color: '#ef4444', fontSize: 13, textAlign: 'center', marginTop: 4 }}>{error}</p>
+            )}
           </div>
 
         ) : (

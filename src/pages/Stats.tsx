@@ -156,8 +156,11 @@ export default function Stats() {
 
   const totalVolume   = periodWorkouts.reduce((a, w) => a + w.volume, 0);
   const lastVolume    = lastPeriodWorkouts.reduce((a, w) => a + w.volume, 0);
-  const volumeTrend   = lastVolume > 0
-    ? `${totalVolume >= lastVolume ? '+' : ''}${Math.round(((totalVolume - lastVolume) / lastVolume) * 100)}%`
+  const _volumeTrendRaw = lastVolume > 0
+    ? Math.round(((totalVolume - lastVolume) / lastVolume) * 100)
+    : NaN;
+  const volumeTrend = isFinite(_volumeTrendRaw)
+    ? `${_volumeTrendRaw >= 0 ? '+' : ''}${_volumeTrendRaw}%`
     : null;
 
   const sessions      = periodWorkouts.length;

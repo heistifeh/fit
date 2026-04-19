@@ -358,9 +358,9 @@ export default function SignUpScreen() {
               </p>
               <p className="text-[12px] text-gray-400 text-center leading-relaxed">
                 By signing up you agree to our{' '}
-                <a href="#" className="underline" style={{ textUnderlineOffset: 3 }}>Terms</a>
+                <a href="https://fitnexonline.com/terms" target="_blank" rel="noopener noreferrer" className="underline" style={{ textUnderlineOffset: 3 }}>Terms</a>
                 {' '}and{' '}
-                <a href="#" className="underline" style={{ textUnderlineOffset: 3 }}>Privacy Policy</a>
+                <a href="https://fitnexonline.com/privacy" target="_blank" rel="noopener noreferrer" className="underline" style={{ textUnderlineOffset: 3 }}>Privacy Policy</a>
               </p>
             </div>
           </>
