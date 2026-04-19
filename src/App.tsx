@@ -3,9 +3,11 @@ import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuthContext } from '@/context/AuthContext';
 import { PreferencesProvider } from '@/context/PreferencesContext';
 import Layout from '@/components/general/Layout';
-import SplashScreen   from '@/pages/auth/SplashScreen';
-import SignUpScreen   from '@/pages/auth/SignUpScreen';
-import SignInScreen   from '@/pages/auth/SignInScreen';
+import SplashScreen          from '@/pages/auth/SplashScreen';
+import SignUpScreen          from '@/pages/auth/SignUpScreen';
+import SignInScreen          from '@/pages/auth/SignInScreen';
+import ForgotPasswordScreen  from '@/pages/auth/ForgotPasswordScreen';
+import ResetPasswordScreen   from '@/pages/auth/ResetPasswordScreen';
 import Home           from '@/pages/Home';
 import History        from '@/pages/History';
 import Stats          from '@/pages/Stats';
@@ -53,11 +55,28 @@ function AppShell({ showGuestNudge }: { showGuestNudge: boolean }) {
 function AuthGate() {
   const { mode } = useAuthContext();
 
-  if (mode === 'splash')        return <SplashScreen />;
-  if (mode === 'signup')        return <SignUpScreen />;
-  if (mode === 'signin')        return <SignInScreen />;
-  if (mode === 'guest')         return <AppShell showGuestNudge={true} />;
-  if (mode === 'authenticated') return <AppShell showGuestNudge={false} />;
+  if (mode === 'loading') return (
+    <div style={{
+      background: '#080808',
+      height: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#10B981' }} />
+        <span style={{ color: '#fff', fontWeight: 900, fontSize: 18, letterSpacing: 2 }}>FITNEX</span>
+      </div>
+    </div>
+  );
+
+  if (mode === 'splash')          return <SplashScreen />;
+  if (mode === 'signup')          return <SignUpScreen />;
+  if (mode === 'signin')          return <SignInScreen />;
+  if (mode === 'forgot-password') return <ForgotPasswordScreen />;
+  if (mode === 'reset-password')  return <ResetPasswordScreen />;
+  if (mode === 'guest')           return <AppShell showGuestNudge={true} />;
+  if (mode === 'authenticated')   return <AppShell showGuestNudge={false} />;
   return null;
 }
 

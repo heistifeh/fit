@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   X, Clock, Pause, Play, Plus, MoreVertical, Check,
 } from 'lucide-react';
@@ -12,6 +13,8 @@ import {
   screenEnter, staggerChild, staggerContainer, checkPunch, rowFlood,
   sheetSlide, overlayFade, press, SPRING,
 } from '@/animations/fitnex.variants';
+import { useAuthContext } from '@/context/AuthContext';
+import { getWorkouts } from '@/lib/supabase';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -45,8 +48,8 @@ function SetRow({ set, index, previous, completed, onToggle }: SetRowProps) {
   const updateSet = useStore((s) => s.updateSet);
 
   const inputBase = 'flex-1 py-2.5 text-center text-[15px] font-bold rounded-xl outline-none focus:ring-2 focus:ring-tint border transition-colors min-w-0';
-  const inputDone = 'bg-[#f0fdf4] border-tint/30 text-tint';
-  const inputIdle = 'bg-white border-gray-200 text-gray-800';
+  const inputDone = 'bg-[#f0fdf4] dark:bg-[#0d2e22] border-tint/30 text-tint dark:text-[#6ee7b7]';
+  const inputIdle = 'bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-[#333] text-gray-800 dark:text-white';
 
   return (
     <motion.div
@@ -58,13 +61,13 @@ function SetRow({ set, index, previous, completed, onToggle }: SetRowProps) {
     >
       {/* # */}
       <span className={`w-7 text-center text-[15px] font-black shrink-0 ${
-        completed ? 'text-tint' : 'text-gray-400'
+        completed ? 'text-tint' : 'text-gray-400 dark:text-[#555]'
       }`}>
         {index + 1}
       </span>
 
       {/* Previous */}
-      <div className="w-[80px] shrink-0 px-2 py-2 bg-white border border-gray-200 rounded-xl text-center text-[13px] font-semibold text-gray-500 truncate">
+      <div className="w-[80px] shrink-0 px-2 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl text-center text-[13px] font-semibold text-gray-500 dark:text-[#666] truncate">
         {previous ?? '—'}
       </div>
 
@@ -98,8 +101,8 @@ function SetRow({ set, index, previous, completed, onToggle }: SetRowProps) {
         initial={false}
         className={`w-9 h-9 rounded-xl border-2 flex items-center justify-center shrink-0 ${
           completed
-            ? 'border-tint shadow-[0_2px_8px_rgba(16,185,129,0.35)]'
-            : 'border-gray-200'
+            ? 'border-tint bg-tint shadow-[0_2px_8px_rgba(16,185,129,0.35)]'
+            : 'border-gray-200 dark:border-[#444]'
         }`}
         whileTap={press.whileTap}
       >
@@ -126,14 +129,14 @@ function ExerciseCard({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="bg-white rounded-2xl border border-[#f0f0f0]">
+    <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a]">
 
       {/* Card header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-50">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-[#1a1a1a]">
         <div className="w-10 h-10 rounded-xl bg-tint-muted flex items-center justify-center text-lg shrink-0">
           {getEmoji(exercise.name)}
         </div>
-        <p className="font-bold flex-1 text-[16px] leading-snug">{exercise.name}</p>
+        <p className="font-bold flex-1 text-[16px] leading-snug dark:text-white">{exercise.name}</p>
 
         {/* Menu */}
         <div className="relative">
@@ -145,15 +148,15 @@ function ExerciseCard({
           )}
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="w-9 h-9 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-400 relative z-[10] active:bg-gray-50"
+            className="w-9 h-9 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] flex items-center justify-center text-gray-400 relative z-[10] active:bg-gray-50 dark:active:bg-[#222]"
           >
             <MoreVertical size={16} />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 bg-white rounded-xl border border-gray-100 shadow-lg z-[10] w-44 overflow-hidden">
+            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-100 dark:border-[#333] shadow-lg z-[10] w-44 overflow-hidden">
               <button
                 onClick={() => { onRemove(); setMenuOpen(false); }}
-                className="w-full px-4 py-3 text-left text-sm text-red-500 font-semibold active:bg-red-50"
+                className="w-full px-4 py-3 text-left text-sm text-red-500 font-semibold active:bg-red-50 dark:active:bg-[#2a1010]"
               >
                 Remove exercise
               </button>
@@ -164,10 +167,10 @@ function ExerciseCard({
 
       {/* Table header */}
       <div className="flex items-center gap-2 px-3 pt-3 pb-1">
-        <span className="w-7 text-center text-[11px] font-bold text-gray-400 tracking-wide shrink-0 uppercase">Set</span>
-        <span className="w-[80px] text-center text-[11px] font-bold text-gray-400 tracking-wide shrink-0 uppercase">Previous</span>
-        <span className="flex-1 text-center text-[11px] font-bold text-gray-400 tracking-wide uppercase">KG</span>
-        <span className="flex-1 text-center text-[11px] font-bold text-gray-400 tracking-wide uppercase">Reps</span>
+        <span className="w-7 text-center text-[11px] font-bold text-gray-400 dark:text-[#555] tracking-wide shrink-0 uppercase">Set</span>
+        <span className="w-[80px] text-center text-[11px] font-bold text-gray-400 dark:text-[#555] tracking-wide shrink-0 uppercase">Previous</span>
+        <span className="flex-1 text-center text-[11px] font-bold text-gray-400 dark:text-[#555] tracking-wide uppercase">KG</span>
+        <span className="flex-1 text-center text-[11px] font-bold text-gray-400 dark:text-[#555] tracking-wide uppercase">Reps</span>
         <span className="w-9 shrink-0" />
       </div>
 
@@ -198,7 +201,7 @@ function ExerciseCard({
       {/* Add set */}
       <button
         onClick={() => addSet(exercise.id)}
-        className="w-full py-3 border-t border-dashed border-gray-200 text-sm font-semibold text-gray-400 flex items-center justify-center gap-1.5 active:bg-gray-50 rounded-b-2xl"
+        className="w-full py-3 border-t border-dashed border-gray-200 dark:border-[#333] text-sm font-semibold text-gray-400 dark:text-[#555] flex items-center justify-center gap-1.5 active:bg-gray-50 dark:active:bg-[#1a1a1a] rounded-b-2xl"
       >
         <Plus size={14} />
         Add set
@@ -210,12 +213,14 @@ function ExerciseCard({
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function CurrentWorkout() {
+  usePageTitle('Workout in progress');
   const navigate       = useNavigate();
   const currentWorkout  = useStore((s) => s.currentWorkout);
   const workouts        = useStore((s) => s.workouts);
   const addExercise     = useStore((s) => s.addExercise);
   const removeExercise  = useStore((s) => s.removeExercise);
   const discardWorkout  = useStore((s) => s.discardWorkout);
+  const { mode, user }  = useAuthContext();
 
   const [elapsed,    setElapsed]    = useState(0);
   const [isRunning,  setIsRunning]  = useState(true);
@@ -251,8 +256,8 @@ export default function CurrentWorkout() {
     return () => clearInterval(restRef.current);
   }, [showRest]);
 
-  // Previous values — look up from history once per render
-  const previousMap = useMemo(() => {
+  // Previous values from local Zustand store (guest / fallback)
+  const localPreviousMap = useMemo(() => {
     const map: Record<string, string | null> = {};
     for (const w of workouts) {
       for (const ex of w.exercises) {
@@ -264,6 +269,26 @@ export default function CurrentWorkout() {
     }
     return map;
   }, [workouts]);
+
+  // Previous values from Supabase (authenticated users)
+  const [dbPreviousMap, setDbPreviousMap] = useState<Record<string, string | null>>({});
+  useEffect(() => {
+    if (mode !== 'authenticated' || !user) return;
+    getWorkouts(user.id).then((dbWorkouts) => {
+      const map: Record<string, string | null> = {};
+      for (const w of dbWorkouts) {
+        for (const ex of w.exercises) {
+          if (!(ex.name in map)) {
+            const last = [...ex.sets].reverse().find((s) => s.weight_kg && s.reps);
+            map[ex.name] = last ? `${last.weight_kg} × ${last.reps}` : null;
+          }
+        }
+      }
+      setDbPreviousMap(map);
+    }).catch(console.error);
+  }, [mode, user]);
+
+  const previousMap = mode === 'authenticated' ? dbPreviousMap : localPreviousMap;
 
   if (!currentWorkout) return <Navigate to="/" replace />;
 
@@ -305,23 +330,24 @@ export default function CurrentWorkout() {
     }).filter((ex) => ex.sets.length > 0);
 
     return {
-      date: dayjs(currentWorkout.createdAt).format('ddd, D MMM'),
-      startTime: dayjs(currentWorkout.createdAt).format('h:mm A'),
+      date:            dayjs(currentWorkout.createdAt).format('ddd, D MMM'),
+      startTime:       dayjs(currentWorkout.createdAt).format('h:mm A'),
+      startedAt:       currentWorkout.createdAt instanceof Date
+                         ? currentWorkout.createdAt.toISOString()
+                         : new Date(currentWorkout.createdAt).toISOString(),
       durationSeconds: elapsed,
-      exercises: summaryExercises,
+      exercises:       summaryExercises,
     };
   };
 
   const handleConfirmSave = () => {
     const summaryState = buildSummaryState();
     setShowFinishSheet(false);
-    // Wait for sheet exit animation before mounting summary screen
     setTimeout(() => navigate('/workout/summary', { state: summaryState }), 220);
   };
 
   const handleDiscardFromSheet = () => {
     setShowFinishSheet(false);
-    // Navigate first so the guard doesn't fire while CurrentWorkout exits
     navigate('/');
     setTimeout(() => discardWorkout(), 300);
   };
@@ -332,7 +358,7 @@ export default function CurrentWorkout() {
 
   return (
     <motion.div
-      className="flex flex-col min-h-screen bg-[#f8f9fa]"
+      className="flex flex-col min-h-screen bg-[#f8f9fa] dark:bg-[#0a0a0a]"
       variants={screenEnter}
       initial="initial"
       animate="animate"
@@ -340,10 +366,10 @@ export default function CurrentWorkout() {
     >
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <header className="bg-white border-b border-gray-100 px-4 pt-10 pb-4 sticky top-0 z-20">
+      <header className="bg-white dark:bg-[#111] border-b border-gray-100 dark:border-[#1a1a1a] px-4 pt-10 pb-4 sticky top-0 z-20">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-[18px] font-black leading-snug">New Workout</h1>
+            <h1 className="text-[18px] font-black leading-snug dark:text-white">New Workout</h1>
             <p className="text-sm text-gray-400 mt-0.5">
               {dayjs().format('ddd, D MMM')}
               {' · '}
@@ -352,10 +378,10 @@ export default function CurrentWorkout() {
           </div>
           <motion.button
             onClick={() => navigate('/')}
-            className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center mt-1 active:bg-gray-200"
+            className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center mt-1 active:bg-gray-200 dark:active:bg-[#222]"
             whileTap={press.whileTap}
           >
-            <X size={18} className="text-gray-500" />
+            <X size={18} className="text-gray-500 dark:text-[#888]" />
           </motion.button>
         </div>
       </header>
@@ -364,24 +390,24 @@ export default function CurrentWorkout() {
       <div className="flex-1 px-4 pt-4 pb-[120px] flex flex-col gap-4">
 
         {/* ── Duration card ─────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-[#f0f0f0] px-4 py-4 flex items-center">
+        <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-4 flex items-center">
           <div className="flex items-center gap-3 flex-1">
             <div className="w-9 h-9 rounded-xl bg-tint-muted flex items-center justify-center shrink-0">
               <Clock size={18} className="text-tint" />
             </div>
             <div>
               <p className="text-[11px] text-gray-400 font-semibold uppercase tracking-wide">Duration</p>
-              <p className="text-3xl font-black tabular-nums leading-tight">{fmtTime(elapsed)}</p>
+              <p className="text-3xl font-black tabular-nums leading-tight dark:text-white">{fmtTime(elapsed)}</p>
             </div>
           </div>
 
           {isRunning ? (
             <motion.button
               onClick={() => setIsRunning(false)}
-              className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center"
+              className="w-11 h-11 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center"
               whileTap={press.whileTap}
             >
-              <Pause size={18} className="text-gray-500" />
+              <Pause size={18} className="text-gray-500 dark:text-[#888]" />
             </motion.button>
           ) : (
             <motion.button
@@ -397,10 +423,10 @@ export default function CurrentWorkout() {
         {/* ── Exercises ─────────────────────────────────────────────────── */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <p className="font-bold text-[15px]">Exercises</p>
+            <p className="font-bold text-[15px] dark:text-white">Exercises</p>
             <motion.button
               onClick={() => setAddExOpen(true)}
-              className="flex items-center gap-1.5 border border-gray-200 bg-white text-tint text-sm font-bold px-4 py-2 rounded-xl"
+              className="flex items-center gap-1.5 border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-tint text-sm font-bold px-4 py-2 rounded-xl"
               whileTap={press.whileTap}
             >
               <Plus size={14} strokeWidth={2.5} />
@@ -409,10 +435,10 @@ export default function CurrentWorkout() {
           </div>
 
           {currentWorkout.exercises.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-[#f0f0f0] py-14 flex flex-col items-center gap-2">
+            <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] py-14 flex flex-col items-center gap-2">
               <p className="text-3xl">🏋️</p>
-              <p className="font-semibold text-gray-500 text-sm mt-1">No exercises yet</p>
-              <p className="text-xs text-gray-400">Tap "Add exercise" to get started</p>
+              <p className="font-semibold text-gray-500 dark:text-[#888] text-sm mt-1">No exercises yet</p>
+              <p className="text-xs text-gray-400 dark:text-[#555]">Tap "Add exercise" to get started</p>
             </div>
           ) : (
             <motion.div
@@ -500,18 +526,17 @@ export default function CurrentWorkout() {
               onClick={() => setShowFinishSheet(false)}
             />
             <motion.div
-              className="relative bg-white rounded-t-3xl w-full px-5 pt-5 pb-10"
+              className="relative bg-white dark:bg-[#111] rounded-t-3xl w-full px-5 pt-5 pb-10"
               variants={sheetSlide}
               initial="initial"
               animate="animate"
               exit="exit"
             >
-              {/* Drag handle */}
               <div className="flex justify-center mb-4">
-                <div className="w-10 h-1 bg-gray-200 rounded-full" />
+                <div className="w-10 h-1 bg-gray-200 dark:bg-[#333] rounded-full" />
               </div>
 
-              <p className="text-[20px] font-black text-gray-900 mb-1">Finish workout?</p>
+              <p className="text-[20px] font-black text-gray-900 dark:text-white mb-1">Finish workout?</p>
               <p className="text-[14px] text-gray-400 font-medium mb-6">
                 {completedSetIds.size} set{completedSetIds.size !== 1 ? 's' : ''} completed
                 {' · '}
@@ -529,7 +554,7 @@ export default function CurrentWorkout() {
                 </motion.button>
                 <motion.button
                   onClick={handleDiscardFromSheet}
-                  className="w-full bg-white text-red-500 font-semibold text-[15px] py-[15px] rounded-2xl border border-gray-100"
+                  className="w-full bg-white dark:bg-[#1a1a1a] text-red-500 font-semibold text-[15px] py-[15px] rounded-2xl border border-gray-100 dark:border-[#333]"
                   whileTap={press.whileTap}
                 >
                   Discard workout
@@ -553,20 +578,19 @@ export default function CurrentWorkout() {
               onClick={() => { setAddExOpen(false); setSearch(''); }}
             />
             <motion.div
-              className="relative bg-white rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md flex flex-col"
+              className="relative bg-white dark:bg-[#111] rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md flex flex-col"
               style={{ maxHeight: '88vh' }}
               variants={sheetSlide}
               initial="initial"
               animate="animate"
               exit="exit"
             >
-              {/* drag handle */}
               <div className="flex justify-center pt-3 pb-1 sm:hidden">
-                <div className="w-10 h-1 bg-gray-200 rounded-full" />
+                <div className="w-10 h-1 bg-gray-200 dark:bg-[#333] rounded-full" />
               </div>
 
               <div className="flex items-center justify-between px-5 py-4">
-                <p className="text-lg font-bold">Add exercise</p>
+                <p className="text-lg font-bold dark:text-white">Add exercise</p>
                 <button
                   onClick={() => { setAddExOpen(false); setSearch(''); }}
                   className="p-2 -mr-2 text-gray-400"
@@ -582,7 +606,7 @@ export default function CurrentWorkout() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   autoFocus
-                  className="w-full py-3 px-4 bg-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-tint placeholder:text-gray-400"
+                  className="w-full py-3 px-4 bg-gray-100 dark:bg-[#1a1a1a] text-gray-900 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-tint placeholder:text-gray-400 dark:placeholder:text-[#555]"
                 />
               </div>
 
@@ -600,14 +624,14 @@ export default function CurrentWorkout() {
                     key={ex.name}
                     variants={staggerChild}
                     onClick={() => { addExercise(ex.name); setAddExOpen(false); setSearch(''); }}
-                    className="w-full text-left flex items-center gap-3 py-3 border-b border-gray-50 last:border-0 rounded-lg"
+                    className="w-full text-left flex items-center gap-3 py-3 border-b border-gray-50 dark:border-[#1a1a1a] last:border-0 rounded-lg"
                     whileTap={press.whileTap}
                   >
                     <span className="w-9 h-9 rounded-xl bg-tint-muted flex items-center justify-center text-base shrink-0">
                       {getEmoji(ex.name)}
                     </span>
                     <div>
-                      <p className="font-semibold text-sm">{ex.name}</p>
+                      <p className="font-semibold text-sm dark:text-white">{ex.name}</p>
                       <p className="text-xs text-gray-400">{ex.muscle}</p>
                     </div>
                   </motion.button>

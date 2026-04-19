@@ -1,9 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import {
-  Pencil, Target, Dumbbell, Clock, Coffee, Bell, User,
+  Target, Dumbbell, Clock, Coffee, Bell, User,
   Code2, Power, ChevronRight, Lock,
 } from 'lucide-react';
+import dayjs from 'dayjs';
+import {
+  getWorkouts, getPersonalRecords, uploadAvatar,
+  type WorkoutWithExercisesAndSets, type PersonalRecord,
+} from '@/lib/supabase';
+import { getBadges } from '@/utils/badges';
+import useStore from '@/store';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ProfileScreenSkeleton } from '@/components/Skeleton';
 import {
   screenEnter, staggerContainer, staggerChild, press, overlayFade, sheetSlide,
 } from '@/animations/fitnex.variants';
@@ -221,22 +230,109 @@ function BottomSheet({
   );
 }
 
-// ─── Badge data ───────────────────────────────────────────────────────────────
+// ─── Avatar upload spinner ────────────────────────────────────────────────────
 
-const BADGES = [
-  { emoji: '🔥', name: '7 day streak',  locked: false },
-  { emoji: '💯', name: '100 workouts',  locked: false },
-  { emoji: '🏆', name: 'First PR',      locked: false },
-  { emoji: '⚡', name: 'Early bird',    locked: false },
-  { emoji: '💎', name: '365 streak',    locked: true  },
-  { emoji: '🦁', name: '1000 sets',     locked: true  },
-];
+const AVATAR_SPINNER_STYLE = `
+  @keyframes av-spin { to { transform: rotate(360deg); } }
+  .av-spinner {
+    width: 10px; height: 10px;
+    border: 1.5px solid rgba(255,255,255,0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: av-spin 0.7s linear infinite;
+  }
+`;
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+function computeStreak(isoDates: string[]): number {
+  if (!isoDates.length) return 0;
+  const workoutDays = new Set(isoDates.map((d) => dayjs(d).format('YYYY-MM-DD')));
+  let streak = 0;
+  let cursor = dayjs();
+  while (workoutDays.has(cursor.format('YYYY-MM-DD'))) {
+    streak++;
+    cursor = cursor.subtract(1, 'day');
+  }
+  return streak;
+}
+
 export default function Profile() {
-  const { mode, setMode, signOut } = useAuthContext();
+  usePageTitle('Profile');
+  const { mode, setMode, signOut, profile, user } = useAuthContext();
   const isGuest = mode === 'guest';
+  const displayName = isGuest ? 'Guest Lifter' : (profile?.name || 'You');
+
+  const storeWorkouts = useStore((s) => s.workouts);
+  const [dbWorkouts,  setDbWorkouts]  = useState<WorkoutWithExercisesAndSets[]>([]);
+  const [dbPRs,       setDbPRs]       = useState<PersonalRecord[]>([]);
+  const [loading,     setLoading]     = useState(mode === 'authenticated');
+  const [avatarUrl,   setAvatarUrl]   = useState<string | null>(profile?.avatar_url ?? null);
+  const [uploading,   setUploading]   = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync avatar from profile once it loads
+  useEffect(() => {
+    if (profile?.avatar_url) setAvatarUrl(profile.avatar_url);
+  }, [profile?.avatar_url]);
+
+  useEffect(() => {
+    if (mode !== 'authenticated' || !user?.id) { setLoading(false); return; }
+    const minDelay = new Promise<void>((res) => setTimeout(res, 300));
+    const dataFetch = Promise.all([getWorkouts(user.id), getPersonalRecords(user.id)]);
+    Promise.all([minDelay, dataFetch])
+      .then(([, [workouts, prs]]) => { setDbWorkouts(workouts); setDbPRs(prs); })
+      .catch((err) => console.error('Profile: failed to load data', err))
+      .finally(() => setLoading(false));
+  }, [mode, user?.id]);
+
+  const handleAvatarClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+    if (!file.type.startsWith('image/')) { alert('Please select an image file'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
+    setUploading(true);
+    try {
+      const url = await uploadAvatar(user.id, file);
+      setAvatarUrl(url);
+    } catch (err) {
+      console.error('Avatar upload failed:', err);
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  // Compute stats
+  const workoutCount = mode === 'authenticated'
+    ? dbWorkouts.length
+    : storeWorkouts.length;
+
+  const totalVolumeKg = mode === 'authenticated'
+    ? dbWorkouts.reduce((a, w) => a + (Number(w.total_volume_kg) || 0), 0)
+    : storeWorkouts.reduce((a, w) => {
+        return a + w.exercises.flatMap((e) => e.sets)
+          .filter((s) => (s.reps ?? 0) > 0)
+          .reduce((b, s) => b + (s.weight ?? 0) * (s.reps ?? 0), 0);
+      }, 0);
+
+  const streak = mode === 'authenticated'
+    ? computeStreak(dbWorkouts.map((w) => w.started_at))
+    : computeStreak(storeWorkouts.map((w) => w.createdAt.toISOString()));
+
+  // Check if any workout was started before 7am
+  const hasEarlyWorkout = mode === 'authenticated'
+    ? dbWorkouts.some((w) => new Date(w.started_at).getHours() < 7)
+    : storeWorkouts.some((w) => w.createdAt.getHours() < 7);
+
+  const badges = getBadges({
+    workoutCount: workoutCount,
+    streak:       streak,
+    hasPR:        mode === 'authenticated' ? dbPRs.length > 0 : false,
+    hasEarlyWorkout,
+  });
 
   const {
     weightUnit, setWeightUnit,
@@ -296,6 +392,7 @@ export default function Profile() {
 
   return (
     <>
+      <style>{AVATAR_SPINNER_STYLE}</style>
       <motion.div
         className="flex flex-col min-h-screen"
         variants={screenEnter}
@@ -303,6 +400,23 @@ export default function Profile() {
         animate="animate"
         exit={{ opacity: 0, transition: { duration: 0.15 } }}
       >
+        <AnimatePresence mode="wait">
+        {loading ? (
+          <motion.div
+            key="skeleton"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ProfileScreenSkeleton />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
 
         {/* ── 1. Hero Header ──────────────────────────────────────────────── */}
         <header className="bg-white dark:bg-[#111] border-b border-gray-100 dark:border-[#1a1a1a] px-5 pt-12 pb-6">
@@ -330,34 +444,82 @@ export default function Profile() {
             </div>
           ) : (
             <div className="flex flex-col items-center">
-              <div className="relative mb-3">
+              <div className="relative mb-3" style={{ width: 80, height: 80 }}>
+                {/* Avatar image or initials fallback */}
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Profile"
+                    onClick={handleAvatarClick}
+                    style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', cursor: 'pointer' }}
+                  />
+                ) : (
+                  <div
+                    onClick={handleAvatarClick}
+                    style={{
+                      width: 80, height: 80, borderRadius: '50%', cursor: 'pointer',
+                      background: 'linear-gradient(135deg, #10B981, #059669)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <span className="text-white font-black" style={{ fontSize: 30 }}>
+                      {profile?.name?.[0]?.toUpperCase() ?? 'F'}
+                    </span>
+                  </div>
+                )}
+                {/* Edit button overlay */}
                 <div
-                  className="w-20 h-20 rounded-full flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, #10B981, #059669)' }}
+                  onClick={handleAvatarClick}
+                  style={{
+                    position: 'absolute', bottom: 0, right: 0,
+                    width: 26, height: 26, borderRadius: '50%',
+                    background: uploading ? '#9ca3af' : '#10B981',
+                    border: '2px solid white',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
                 >
-                  <span className="text-white font-black" style={{ fontSize: 30 }}>T</span>
+                  {uploading ? (
+                    <div className="av-spinner" />
+                  ) : (
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  )}
                 </div>
-                <button className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-tint border-2 border-white flex items-center justify-center shadow-sm active:opacity-80">
-                  <Pencil size={10} className="text-white" strokeWidth={2.5} />
-                </button>
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleFileChange}
+                />
               </div>
-              <h1 className="text-[20px] font-black leading-tight dark:text-white">Tife</h1>
+              <h1 className="text-[20px] font-black leading-tight dark:text-white">{displayName}</h1>
               <p className="text-[13px] text-gray-400 mt-0.5">Member since January 2025</p>
               <div className="flex items-center mt-5 w-full">
                 <div className="flex-1 flex flex-col items-center gap-0.5">
-                  <span className="text-[20px] font-black tabular-nums leading-tight dark:text-white">148</span>
+                  <span className="text-[20px] font-black tabular-nums leading-tight dark:text-white">
+                    {workoutCount}
+                  </span>
                   <span className="text-[11px] text-gray-400 font-medium">Workouts</span>
                 </div>
                 <div className="w-px h-8 bg-gray-100 dark:bg-[#1a1a1a]" />
                 <div className="flex-1 flex flex-col items-center gap-0.5">
                   <span className="text-[20px] font-black tabular-nums leading-tight flex items-center gap-1 dark:text-white">
-                    🔥 12
+                    🔥 {streak}
                   </span>
                   <span className="text-[11px] text-gray-400 font-medium">Streak</span>
                 </div>
                 <div className="w-px h-8 bg-gray-100 dark:bg-[#1a1a1a]" />
                 <div className="flex-1 flex flex-col items-center gap-0.5">
-                  <span className="text-[20px] font-black tabular-nums leading-tight dark:text-white">42,600</span>
+                  <span className="text-[20px] font-black tabular-nums leading-tight dark:text-white">
+                    {totalVolumeKg >= 1000
+                      ? `${(totalVolumeKg / 1000).toFixed(1)}k`
+                      : totalVolumeKg.toFixed(0)}
+                  </span>
                   <span className="text-[11px] text-gray-400 font-medium">kg lifted</span>
                 </div>
               </div>
@@ -406,15 +568,22 @@ export default function Profile() {
                   initial="initial"
                   animate="animate"
                 >
-                  {BADGES.map((badge) => (
+                  {badges.map((badge) => (
                     <motion.div
-                      key={badge.name}
+                      key={badge.id}
                       variants={staggerChild}
                       className="shrink-0 w-20 bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] py-3 flex flex-col items-center gap-1.5"
-                      style={{ opacity: badge.locked ? 0.4 : 1 }}
+                      style={{
+                        opacity: badge.earned ? 1 : 0.35,
+                        filter:  badge.earned ? 'none' : 'grayscale(1)',
+                      }}
+                      title={badge.earned ? badge.description : `🔒 ${badge.description}`}
                     >
                       <span className="text-2xl leading-none">{badge.emoji}</span>
-                      <span className="text-[10px] text-gray-500 dark:text-[#555] font-medium text-center leading-snug px-1">
+                      <span
+                        className="text-[10px] font-medium text-center leading-snug px-1"
+                        style={{ color: badge.earned ? '#6b7280' : '#9ca3af' }}
+                      >
                         {badge.name}
                       </span>
                     </motion.div>
@@ -550,6 +719,9 @@ export default function Profile() {
           </motion.div>
 
         </motion.div>
+          </motion.div>
+        )}
+        </AnimatePresence>
       </motion.div>
 
       {/* ── Weight unit sheet ─────────────────────────────────────────────────── */}

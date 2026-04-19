@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.103.3",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.38.0",
     "html2canvas": "^1.4.1",

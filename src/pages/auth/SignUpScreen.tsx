@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { ChevronLeft, Eye, EyeOff, Check, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthContext } from '@/context/AuthContext';
+import { usePreferences } from '@/context/PreferencesContext';
 import { SPRING } from '@/animations/fitnex.variants';
 
 // ─── Autofill override ────────────────────────────────────────────────────────
@@ -12,6 +13,12 @@ const AUTOFILL_STYLE = `
   input:-webkit-autofill:focus {
     -webkit-box-shadow: 0 0 0 30px #f8f9fa inset !important;
     -webkit-text-fill-color: #111 !important;
+  }
+  .dark input:-webkit-autofill,
+  .dark input:-webkit-autofill:hover,
+  .dark input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 30px #1a1a1a inset !important;
+    -webkit-text-fill-color: #fff !important;
   }
 `;
 
@@ -97,14 +104,17 @@ const slideIn = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function SignUpScreen() {
-  const { setMode, signUp } = useAuthContext();
+  const { setMode, signUp, signInWithGoogle } = useAuthContext();
+  const { darkMode } = usePreferences();
 
   const [name,         setName]         = useState('');
   const [email,        setEmail]        = useState('');
   const [password,     setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [emailError,   setEmailError]   = useState('');
+  const [error,        setError]        = useState<string | null>(null);
   const [loading,      setLoading]      = useState(false);
+  const [emailSent,    setEmailSent]    = useState(false);
 
   const emailRef = useRef<HTMLInputElement>(null);
 
@@ -120,191 +130,242 @@ export default function SignUpScreen() {
     e.preventDefault();
     if (!canSubmit) return;
     setLoading(true);
+    setError(null);
     try {
       await signUp(name.trim(), email, password);
+      setEmailSent(true);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Sign up failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const inputBase = 'w-full py-[14px] px-4 rounded-xl text-[15px] font-medium outline-none transition-all border-[1.5px]';
-  const inputIdle = 'bg-[#f8f9fa] border-[#e5e7eb] text-gray-900 placeholder:text-gray-400';
-  const inputFocus = 'focus:bg-white focus:border-tint';
+  const inputIdle = 'bg-[#f8f9fa] dark:bg-[#1a1a1a] border-[#e5e7eb] dark:border-[#333] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#555]';
+  const inputFocus = 'focus:bg-white dark:focus:bg-[#222] focus:border-tint';
 
   return (
     <>
       <style>{AUTOFILL_STYLE + SPINNER_STYLE}</style>
 
       <motion.div
-        className="min-h-screen bg-white overflow-y-auto"
+        className="min-h-screen bg-white dark:bg-[#0a0a0a] overflow-y-auto"
         variants={slideIn}
         initial="initial"
         animate="animate"
         exit="exit"
         style={{ maxWidth: 390, margin: '0 auto', padding: '52px 24px 32px' }}
       >
-        {/* ── Back button ──────────────────────────────────────────────── */}
-        <motion.button
-          onClick={() => setMode('splash')}
-          className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center mb-8"
-          whileTap={{ scale: 0.93 }}
-        >
-          <ChevronLeft size={20} className="text-gray-600" />
-        </motion.button>
-
-        {/* ── Header ───────────────────────────────────────────────────── */}
-        <div className="mb-8">
-          <h1
-            className="text-gray-900 mb-1.5"
-            style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.8px', lineHeight: 1.2 }}
-          >
-            Create account
-          </h1>
-          <p className="text-[14px] text-gray-400 font-medium leading-snug">
-            Join thousands of lifters tracking their progress on Fitnex.
-          </p>
-        </div>
-
-        {/* ── Form ─────────────────────────────────────────────────────── */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-
-          {/* Full name */}
-          <div>
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-              Full name
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Tife"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={`${inputBase} ${inputIdle} ${inputFocus} ${name ? 'pr-11' : ''}`}
-              />
-              {name.trim() && (
-                <div className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-tint flex items-center justify-center">
-                  <Check size={11} className="text-white" strokeWidth={3} />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-              Email
-            </label>
-            <div className="relative">
-              <input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(''); }}
-                onBlur={handleEmailBlur}
-                ref={emailRef}
-                className={`${inputBase} ${inputFocus} pr-11 ${
-                  emailError
-                    ? 'bg-red-50 border-red-400 text-gray-900'
-                    : `${inputIdle}`
-                }`}
-              />
-              {/* Status icon */}
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
-                {emailError ? (
-                  <AlertCircle size={17} className="text-red-400" />
-                ) : email && emailValid ? (
-                  <div className="w-5 h-5 rounded-full bg-tint flex items-center justify-center">
-                    <Check size={11} className="text-white" strokeWidth={3} />
-                  </div>
-                ) : null}
-              </div>
-            </div>
-            {emailError && (
-              <p className="mt-1.5 text-[12px] text-red-500 font-medium">{emailError}</p>
-            )}
-          </div>
-
-          {/* Password */}
-          <div>
-            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Create a password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className={`${inputBase} ${inputIdle} ${inputFocus} pr-11`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 p-0.5"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-              </button>
-            </div>
-            <StrengthMeter password={password} />
-          </div>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-1">
-            <div className="flex-1 h-px bg-gray-100" />
-            <span className="text-[12px] text-gray-400 font-medium">or sign up with</span>
-            <div className="flex-1 h-px bg-gray-100" />
-          </div>
-
-          {/* Google button */}
+        {/* ── Back button (hidden once email is sent) ───────────────── */}
+        {!emailSent && (
           <motion.button
-            type="button"
-            onClick={() => console.log('TODO: Google OAuth')}
-            className="w-full flex items-center justify-center gap-2.5 py-[14px] rounded-xl border border-gray-200 bg-white text-gray-700 font-semibold text-[15px]"
-            whileTap={{ scale: 0.97 }}
+            onClick={() => setMode('splash')}
+            className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center mb-8"
+            whileTap={{ scale: 0.93 }}
           >
-            <GoogleLogo />
-            Continue with Google
+            <ChevronLeft size={20} className="text-gray-600 dark:text-[#aaa]" />
           </motion.button>
+        )}
 
-          {/* Submit */}
-          <motion.button
-            type="submit"
-            disabled={!canSubmit}
-            className="w-full flex items-center justify-center gap-2 py-[17px] rounded-2xl font-black text-[16px] text-white transition-opacity"
-            style={{ backgroundColor: canSubmit ? '#10B981' : '#d1d5db' }}
-            whileTap={canSubmit ? { scale: 0.97 } : {}}
-          >
-            {loading ? (
-              <>
-                <span className="su-spinner" />
-                Creating account…
-              </>
-            ) : (
-              'Create account'
-            )}
-          </motion.button>
+        {emailSent ? (
 
-        </form>
-
-        {/* ── Footer ───────────────────────────────────────────────────── */}
-        <div className="mt-6 flex flex-col items-center gap-3">
-          <p className="text-[14px] text-gray-500">
-            Already have an account?{' '}
+          /* ── Email confirmation screen ─────────────────────────────── */
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 0' }}>
+            <div style={{ width: 72, height: 72, borderRadius: '50%', background: darkMode ? '#0d2e22' : '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+            </div>
+            <h2 style={{ fontSize: 22, fontWeight: 900, color: darkMode ? '#fff' : '#111', marginBottom: 8 }}>
+              Check your email
+            </h2>
+            <p style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.6, marginBottom: 6 }}>
+              We sent a confirmation link to
+            </p>
+            <p style={{ color: darkMode ? '#e5e7eb' : '#111', fontWeight: 700, fontSize: 15, marginBottom: 32 }}>
+              {email}
+            </p>
+            <p style={{ color: '#9ca3af', fontSize: 13, lineHeight: 1.6, marginBottom: 32, maxWidth: 260 }}>
+              Click the link in the email to activate your account, then come back to sign in.
+            </p>
             <button
               onClick={() => setMode('signin')}
-              className="text-tint font-semibold"
+              style={{ width: '100%', background: '#10B981', border: 'none', borderRadius: 14, padding: 16, fontSize: 15, fontWeight: 800, color: '#fff', cursor: 'pointer' }}
             >
-              Sign in
+              Go to sign in
             </button>
-          </p>
-          <p className="text-[12px] text-gray-400 text-center leading-relaxed">
-            By signing up you agree to our{' '}
-            <a href="#" className="underline" style={{ textUnderlineOffset: 3 }}>Terms</a>
-            {' '}and{' '}
-            <a href="#" className="underline" style={{ textUnderlineOffset: 3 }}>Privacy Policy</a>
-          </p>
-        </div>
+            <p style={{ color: '#9ca3af', fontSize: 12, marginTop: 16 }}>
+              Didn't get it? Check your spam folder
+            </p>
+          </div>
+
+        ) : (
+
+          /* ── Sign-up form ──────────────────────────────────────────── */
+          <>
+            {/* ── Header ─────────────────────────────────────────────── */}
+            <div className="mb-8">
+              <h1
+                className="text-gray-900 dark:text-white mb-1.5"
+                style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.8px', lineHeight: 1.2 }}
+              >
+                Create account
+              </h1>
+              <p className="text-[14px] text-gray-400 font-medium leading-snug">
+                Join thousands of lifters tracking their progress on Fitnex.
+              </p>
+            </div>
+
+            {/* ── Form ───────────────────────────────────────────────── */}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+
+              {/* Full name */}
+              <div>
+                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                  Full name
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Tife"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={`${inputBase} ${inputIdle} ${inputFocus} ${name ? 'pr-11' : ''}`}
+                  />
+                  {name.trim() && (
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-tint flex items-center justify-center">
+                      <Check size={11} className="text-white" strokeWidth={3} />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                  Email
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(''); }}
+                    onBlur={handleEmailBlur}
+                    ref={emailRef}
+                    className={`${inputBase} ${inputFocus} pr-11 ${
+                      emailError
+                        ? 'bg-red-50 border-red-400 text-gray-900'
+                        : `${inputIdle}`
+                    }`}
+                  />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                    {emailError ? (
+                      <AlertCircle size={17} className="text-red-400" />
+                    ) : email && emailValid ? (
+                      <div className="w-5 h-5 rounded-full bg-tint flex items-center justify-center">
+                        <Check size={11} className="text-white" strokeWidth={3} />
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+                {emailError && (
+                  <p className="mt-1.5 text-[12px] text-red-500 font-medium">{emailError}</p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Create a password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={`${inputBase} ${inputIdle} ${inputFocus} pr-11`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 p-0.5"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </div>
+                <StrengthMeter password={password} />
+              </div>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3 my-1">
+                <div className="flex-1 h-px bg-gray-100 dark:bg-[#333]" />
+                <span className="text-[12px] text-gray-400 font-medium">or sign up with</span>
+                <div className="flex-1 h-px bg-gray-100 dark:bg-[#333]" />
+              </div>
+
+              {/* Google */}
+              <motion.button
+                type="button"
+                onClick={signInWithGoogle}
+                className="w-full flex items-center justify-center gap-2.5 py-[14px] rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-700 dark:text-white font-semibold text-[15px]"
+                whileTap={{ scale: 0.97 }}
+              >
+                <GoogleLogo />
+                Continue with Google
+              </motion.button>
+
+              {/* Submit */}
+              <motion.button
+                type="submit"
+                disabled={!canSubmit}
+                className="w-full flex items-center justify-center gap-2 py-[17px] rounded-2xl font-black text-[16px] text-white transition-opacity"
+                style={{ backgroundColor: canSubmit ? '#10B981' : '#d1d5db' }}
+                whileTap={canSubmit ? { scale: 0.97 } : {}}
+              >
+                {loading ? (
+                  <>
+                    <span className="su-spinner" />
+                    Creating account…
+                  </>
+                ) : (
+                  'Create account'
+                )}
+              </motion.button>
+
+              {error && (
+                <p style={{ color: '#ef4444', fontSize: 13, textAlign: 'center', marginTop: 4 }}>
+                  {error}
+                </p>
+              )}
+
+            </form>
+
+            {/* ── Footer ─────────────────────────────────────────────── */}
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <p className="text-[14px] text-gray-500">
+                Already have an account?{' '}
+                <button
+                  onClick={() => setMode('signin')}
+                  className="text-tint font-semibold"
+                >
+                  Sign in
+                </button>
+              </p>
+              <p className="text-[12px] text-gray-400 text-center leading-relaxed">
+                By signing up you agree to our{' '}
+                <a href="#" className="underline" style={{ textUnderlineOffset: 3 }}>Terms</a>
+                {' '}and{' '}
+                <a href="#" className="underline" style={{ textUnderlineOffset: 3 }}>Privacy Policy</a>
+              </p>
+            </div>
+          </>
+
+        )}
 
       </motion.div>
     </>

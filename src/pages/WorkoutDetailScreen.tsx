@@ -10,6 +10,7 @@ import {
 } from '@/animations/fitnex.variants';
 import { usePreferences } from '@/context/PreferencesContext';
 import { formatWeight, fmtWeightNum } from '@/utils/weight';
+import { useAuthContext } from '@/context/AuthContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -64,17 +65,19 @@ function ExerciseCard({
   exercise: DetailExercise;
   weightUnit: 'kg' | 'lbs';
 }) {
+  const { darkMode } = usePreferences();
+
   return (
     <motion.div
       variants={staggerChild}
-      className="bg-white rounded-2xl border border-[#f0f0f0] overflow-hidden"
+      className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] overflow-hidden"
     >
       {/* Card header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#f8f9fa]">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#f8f9fa] dark:border-[#1a1a1a]">
         <div className="w-9 h-9 rounded-xl bg-tint-muted flex items-center justify-center text-base shrink-0">
           {exercise.emoji}
         </div>
-        <p className="font-bold text-[15px] flex-1 leading-snug">{exercise.name}</p>
+        <p className="font-bold text-[15px] flex-1 leading-snug dark:text-white">{exercise.name}</p>
         <p className="text-tint font-bold text-[13px] tabular-nums shrink-0">
           {exercise.total_volume > 0 ? formatWeight(exercise.total_volume, weightUnit) : '—'}
         </p>
@@ -110,11 +113,11 @@ function ExerciseCard({
               className="flex items-center px-4 py-2.5 gap-2"
               style={{
                 backgroundColor: set.is_pr
-                  ? '#fef3c7'
+                  ? (darkMode ? '#2a1a00' : '#fef3c7')
                   : set.is_completed
-                    ? '#f0fdf4'
+                    ? (darkMode ? '#0d2e22' : '#f0fdf4')
                     : undefined,
-                borderBottom: i < arr.length - 1 ? '1px solid #f8f9fa' : undefined,
+                borderBottom: i < arr.length - 1 ? `1px solid ${darkMode ? '#1a1a1a' : '#f8f9fa'}` : undefined,
               }}
             >
               {/* Set number */}
@@ -125,7 +128,7 @@ function ExerciseCard({
               </span>
 
               {/* Reps × Weight */}
-              <span className="flex-1 text-center text-[14px] font-bold text-gray-800 tabular-nums">
+              <span className="flex-1 text-center text-[14px] font-bold text-gray-800 dark:text-white tabular-nums">
                 {set.reps} × {set.weight_kg > 0 ? fmtWeightNum(set.weight_kg, weightUnit) : '—'}
               </span>
 
@@ -137,7 +140,7 @@ function ExerciseCard({
               {/* PR badge or spacer */}
               <div className="w-8 flex justify-end shrink-0">
                 {set.is_pr && (
-                  <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                  <span className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-black px-1.5 py-0.5 rounded-full">
                     PR
                   </span>
                 )}
@@ -159,7 +162,9 @@ type Props = {
 
 export default function WorkoutDetailScreen({ workout, onBack }: Props) {
   const [showShareCard, setShowShareCard] = useState(false);
-  const { weightUnit } = usePreferences();
+  const { weightUnit, darkMode } = usePreferences();
+  const { mode, profile } = useAuthContext();
+  const displayName = mode === 'guest' ? 'Lifter' : (profile?.name || 'You');
 
   const durationMins = Math.floor(workout.duration_secs / 60);
 
@@ -172,7 +177,7 @@ export default function WorkoutDetailScreen({ workout, onBack }: Props) {
   return (
     <>
       <motion.div
-        className="fixed inset-0 z-40 overflow-y-auto bg-[#f8f9fa]"
+        className="fixed inset-0 z-40 overflow-y-auto bg-[#f8f9fa] dark:bg-[#0a0a0a]"
         variants={slideRight}
         initial="initial"
         animate="animate"
@@ -181,25 +186,25 @@ export default function WorkoutDetailScreen({ workout, onBack }: Props) {
         <div className="max-w-[390px] mx-auto pb-10">
 
           {/* ── 1. Header ──────────────────────────────────────────────────── */}
-          <header className="bg-white px-4 pt-12 pb-4 flex items-center justify-between sticky top-0 z-10 border-b border-[#f0f0f0]">
+          <header className="bg-white dark:bg-[#111] px-4 pt-12 pb-4 flex items-center justify-between sticky top-0 z-10 border-b border-[#f0f0f0] dark:border-[#1a1a1a]">
             <motion.button
               onClick={onBack}
-              className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0"
+              className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center shrink-0"
               whileTap={press.whileTap}
             >
-              <ChevronLeft size={20} className="text-gray-600" />
+              <ChevronLeft size={20} className="text-gray-600 dark:text-[#aaa]" />
             </motion.button>
 
-            <p className="font-bold text-[16px] absolute left-1/2 -translate-x-1/2">
+            <p className="font-bold text-[16px] absolute left-1/2 -translate-x-1/2 dark:text-white">
               {workout.date}
             </p>
 
             <motion.button
               onClick={() => setShowShareCard(true)}
-              className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center shrink-0"
+              className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center shrink-0"
               whileTap={press.whileTap}
             >
-              <Share2 size={17} className="text-gray-600" />
+              <Share2 size={17} className="text-gray-600 dark:text-[#aaa]" />
             </motion.button>
           </header>
 
@@ -214,12 +219,12 @@ export default function WorkoutDetailScreen({ workout, onBack }: Props) {
             >
               <motion.div
                 variants={staggerChild}
-                className="bg-white rounded-2xl border border-[#f0f0f0] p-3 flex flex-col items-center gap-1.5"
+                className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-3 flex flex-col items-center gap-1.5"
               >
                 <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                   <Clock size={15} className="text-tint" />
                 </div>
-                <p className="text-[15px] font-black tabular-nums leading-tight text-center text-gray-900">
+                <p className="text-[15px] font-black tabular-nums leading-tight text-center text-gray-900 dark:text-white">
                   {fmtDuration(workout.duration_secs)}
                 </p>
                 <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">
@@ -229,12 +234,12 @@ export default function WorkoutDetailScreen({ workout, onBack }: Props) {
 
               <motion.div
                 variants={staggerChild}
-                className="bg-white rounded-2xl border border-[#f0f0f0] p-3 flex flex-col items-center gap-1.5"
+                className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-3 flex flex-col items-center gap-1.5"
               >
                 <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                   <Dumbbell size={15} className="text-tint" />
                 </div>
-                <p className="text-[15px] font-black tabular-nums leading-tight text-center text-gray-900">
+                <p className="text-[15px] font-black tabular-nums leading-tight text-center text-gray-900 dark:text-white">
                   {formatWeight(workout.total_volume_kg, weightUnit)}
                 </p>
                 <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">
@@ -244,12 +249,12 @@ export default function WorkoutDetailScreen({ workout, onBack }: Props) {
 
               <motion.div
                 variants={staggerChild}
-                className="bg-white rounded-2xl border border-[#f0f0f0] p-3 flex flex-col items-center gap-1.5"
+                className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-3 flex flex-col items-center gap-1.5"
               >
                 <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                   <CheckSquare size={15} className="text-tint" />
                 </div>
-                <p className="text-[15px] font-black tabular-nums leading-tight text-center text-gray-900">
+                <p className="text-[15px] font-black tabular-nums leading-tight text-center text-gray-900 dark:text-white">
                   {workout.total_sets}
                 </p>
                 <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">
@@ -264,8 +269,8 @@ export default function WorkoutDetailScreen({ workout, onBack }: Props) {
                 variants={prBurst}
                 initial="initial"
                 animate="animate"
-                className="rounded-2xl border border-[#fcd34d] px-4 py-3.5 flex items-center gap-3"
-                style={{ background: '#fef3c7' }}
+                className="rounded-2xl border border-[#fcd34d] dark:border-amber-900/50 px-4 py-3.5 flex items-center gap-3"
+                style={{ background: darkMode ? '#2a1a00' : '#fef3c7' }}
               >
                 <span className="text-2xl shrink-0">🏆</span>
                 <div className="min-w-0">
@@ -324,8 +329,8 @@ export default function WorkoutDetailScreen({ workout, onBack }: Props) {
         {showShareCard && (
           <WorkoutShareCard
             key="share-detail"
-            name="Tife"
-            handle="@whoistife_x"
+            name={displayName}
+            handle={profile?.handle ?? ''}
             date={workout.date}
             durationMinutes={durationMins}
             totalVolume={workout.total_volume_kg}

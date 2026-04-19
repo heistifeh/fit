@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import Card from '@/components/general/Card';
 import SetItem from './SetItem';
 import CustomButton from '@/components/general/CustomButton';
@@ -8,8 +9,20 @@ type WorkoutExerciseItemProps = {
   exercise: ExerciseWithSets;
 };
 
+const setRowVariant = {
+  initial: { opacity: 0, height: 0 },
+  animate: { opacity: 1, height: 'auto' as const },
+  exit:    { opacity: 0, height: 0 },
+};
+
 export default function WorkoutExerciseItem({ exercise }: WorkoutExerciseItemProps) {
-  const addSet = useStore((state) => state.addSet);
+  const addSet   = useStore((state) => state.addSet);
+  const cloneSet = useStore((state) => state.cloneSet);
+
+  // Last completed set (reps > 0) — used for "Add set" placeholder pre-fill
+  const lastCompleted = [...exercise.sets]
+    .reverse()
+    .find((s) => s.reps && s.reps > 0);
 
   return (
     <Card title={exercise.name}>
@@ -17,13 +30,44 @@ export default function WorkoutExerciseItem({ exercise }: WorkoutExerciseItemPro
         <span className="font-semibold w-6 shrink-0">Set</span>
         <span className="flex-1 text-center font-semibold">kg</span>
         <span className="flex-1 text-center font-semibold">Reps</span>
-        <span className="w-11" />
+        <span className="w-[88px]" /> {/* wider to accommodate Repeat pill */}
       </div>
+
       <div className="flex flex-col gap-1.5">
-        {exercise.sets.map((item, index) => (
-          <SetItem key={item.id} index={index} set={item} />
-        ))}
+        <AnimatePresence initial={false}>
+          {exercise.sets.map((item, index) => {
+            // Preceding completed set for this row's placeholder
+            const prevCompleted = exercise.sets
+              .slice(0, index)
+              .reverse()
+              .find((s) => s.reps && s.reps > 0);
+
+            return (
+              <motion.div
+                key={item.id}
+                variants={setRowVariant}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                style={{ overflow: 'hidden' }}
+              >
+                <SetItem
+                  index={index}
+                  set={item}
+                  placeholderWeight={prevCompleted?.weight?.toString()}
+                  placeholderReps={prevCompleted?.reps?.toString()}
+                  onClone={
+                    item.reps && item.reps > 0
+                      ? () => cloneSet(exercise.id, item.weight ?? 0, item.reps ?? 0)
+                      : undefined
+                  }
+                />
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
       </div>
+
       <CustomButton
         onClick={() => addSet(exercise.id)}
         variant="link"

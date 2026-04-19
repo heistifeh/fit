@@ -268,7 +268,7 @@ function Step({ n, text }: { n: number; text: string }) {
       <div className="w-6 h-6 rounded-full bg-tint flex items-center justify-center shrink-0 mt-0.5">
         <span className="text-white text-[11px] font-black">{n}</span>
       </div>
-      <p className="text-[14px] text-gray-700 font-medium leading-snug pt-0.5">{text}</p>
+      <p className="text-[14px] text-gray-700 dark:text-[#aaa] font-medium leading-snug pt-0.5">{text}</p>
     </div>
   );
 }
@@ -593,11 +593,11 @@ export default function WorkoutShareCard(props: ShareCardProps) {
 
           {/* Caption preview */}
           <div className="px-4 pt-4 pb-8 shrink-0">
-            <div className="bg-white rounded-2xl border border-[#f0f0f0] p-4">
+            <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-4">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
                 Caption preview
               </p>
-              <pre className="text-[13px] text-gray-700 font-medium whitespace-pre-wrap leading-relaxed">
+              <pre className="text-[13px] text-gray-700 dark:text-[#aaa] font-medium whitespace-pre-wrap leading-relaxed">
                 {captionLines.map((line, i) => (
                   <span key={i}>
                     {line.startsWith('#')
@@ -627,7 +627,7 @@ export default function WorkoutShareCard(props: ShareCardProps) {
                 onClick={() => setShowInstructions(false)}
               />
               <motion.div
-                className="relative bg-white rounded-t-3xl w-full"
+                className="relative bg-white dark:bg-[#111] rounded-t-3xl w-full"
                 style={{ padding: 24 }}
                 variants={sheetSlide}
                 initial="initial"
@@ -641,7 +641,7 @@ export default function WorkoutShareCard(props: ShareCardProps) {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-[16px] font-black text-gray-900 leading-snug">
+                    <p className="text-[16px] font-black text-gray-900 dark:text-white leading-snug">
                       Card saved to your device
                     </p>
                     <p className="text-[13px] text-gray-400 font-medium">
@@ -650,7 +650,7 @@ export default function WorkoutShareCard(props: ShareCardProps) {
                   </div>
                 </div>
 
-                <div className="h-px bg-gray-100 my-4" />
+                <div className="h-px bg-gray-100 dark:bg-[#333] my-4" />
 
                 <div className="flex flex-col gap-3.5 mb-6">
                   <Step n={1} text="Your Fitnex card was just downloaded to your Photos or Downloads folder" />

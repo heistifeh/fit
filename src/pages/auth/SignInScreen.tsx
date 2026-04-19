@@ -13,6 +13,12 @@ const AUTOFILL_STYLE = `
     -webkit-box-shadow: 0 0 0 30px #f8f9fa inset !important;
     -webkit-text-fill-color: #111 !important;
   }
+  .dark input:-webkit-autofill,
+  .dark input:-webkit-autofill:hover,
+  .dark input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 30px #1a1a1a inset !important;
+    -webkit-text-fill-color: #fff !important;
+  }
 `;
 
 // ─── Spinner style ────────────────────────────────────────────────────────────
@@ -53,12 +59,13 @@ const slideIn = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function SignInScreen() {
-  const { setMode, signIn } = useAuthContext();
+  const { setMode, signIn, signInWithGoogle } = useAuthContext();
 
   const [email,        setEmail]        = useState('');
   const [password,     setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [emailError,   setEmailError]   = useState('');
+  const [error,        setError]        = useState<string | null>(null);
   const [loading,      setLoading]      = useState(false);
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -73,23 +80,26 @@ export default function SignInScreen() {
     e.preventDefault();
     if (!canSubmit) return;
     setLoading(true);
+    setError(null);
     try {
       await signIn(email, password);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Sign in failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const inputBase = 'w-full py-[14px] px-4 rounded-xl text-[15px] font-medium outline-none transition-all border-[1.5px]';
-  const inputIdle = 'bg-[#f8f9fa] border-[#e5e7eb] text-gray-900 placeholder:text-gray-400';
-  const inputFocus = 'focus:bg-white focus:border-tint';
+  const inputIdle = 'bg-[#f8f9fa] dark:bg-[#1a1a1a] border-[#e5e7eb] dark:border-[#333] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#555]';
+  const inputFocus = 'focus:bg-white dark:focus:bg-[#222] focus:border-tint';
 
   return (
     <>
       <style>{AUTOFILL_STYLE + SPINNER_STYLE}</style>
 
       <motion.div
-        className="min-h-screen bg-white overflow-y-auto"
+        className="min-h-screen bg-white dark:bg-[#0a0a0a] overflow-y-auto"
         variants={slideIn}
         initial="initial"
         animate="animate"
@@ -99,16 +109,16 @@ export default function SignInScreen() {
         {/* ── Back button ──────────────────────────────────────────────── */}
         <motion.button
           onClick={() => setMode('splash')}
-          className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center mb-8"
+          className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center mb-8"
           whileTap={{ scale: 0.93 }}
         >
-          <ChevronLeft size={20} className="text-gray-600" />
+          <ChevronLeft size={20} className="text-gray-600 dark:text-[#aaa]" />
         </motion.button>
 
         {/* ── Header ───────────────────────────────────────────────────── */}
         <div className="mb-8">
           <h1
-            className="text-gray-900 mb-1.5"
+            className="text-gray-900 dark:text-white mb-1.5"
             style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.8px', lineHeight: 1.2 }}
           >
             Welcome back
@@ -179,8 +189,8 @@ export default function SignInScreen() {
             {/* Forgot password */}
             <button
               type="button"
-              onClick={() => console.log('TODO: forgot password')}
-              className="mt-2 text-[12px] text-gray-400 font-medium"
+              onClick={() => setMode('forgot-password')}
+              className="mt-2 text-[12px] text-tint font-semibold"
             >
               Forgot password?
             </button>
@@ -188,16 +198,16 @@ export default function SignInScreen() {
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-1">
-            <div className="flex-1 h-px bg-gray-100" />
+            <div className="flex-1 h-px bg-gray-100 dark:bg-[#333]" />
             <span className="text-[12px] text-gray-400 font-medium">or sign in with</span>
-            <div className="flex-1 h-px bg-gray-100" />
+            <div className="flex-1 h-px bg-gray-100 dark:bg-[#333]" />
           </div>
 
           {/* Google button */}
           <motion.button
             type="button"
-            onClick={() => console.log('TODO: Google OAuth')}
-            className="w-full flex items-center justify-center gap-2.5 py-[14px] rounded-xl border border-gray-200 bg-white text-gray-700 font-semibold text-[15px]"
+            onClick={signInWithGoogle}
+            className="w-full flex items-center justify-center gap-2.5 py-[14px] rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-gray-700 dark:text-white font-semibold text-[15px]"
             whileTap={{ scale: 0.97 }}
           >
             <GoogleLogo />
@@ -221,6 +231,12 @@ export default function SignInScreen() {
               'Sign in'
             )}
           </motion.button>
+
+          {error && (
+            <p style={{ color: '#ef4444', fontSize: 13, textAlign: 'center', marginTop: 4 }}>
+              {error}
+            </p>
+          )}
 
         </form>
 

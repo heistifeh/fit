@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import useStore from '@/store';
+import { useAuthContext } from '@/context/AuthContext';
+import { usePreferences } from '@/context/PreferencesContext';
+import { saveWorkout, updatePersonalRecords } from '@/lib/supabase';
 import {
   Clock, Dumbbell, CheckSquare, Share2, Check, Save,
 } from 'lucide-react';
@@ -29,6 +33,7 @@ type SummaryExercise = {
 export type WorkoutSummaryProps = {
   date: string;
   startTime: string;
+  startedAt?: string;          // ISO — used for Supabase save
   durationSeconds: number;
   exercises: SummaryExercise[];
   onSave?: () => void;
@@ -48,6 +53,7 @@ function fmtDuration(seconds: number): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function WorkoutSummary() {
+  usePageTitle('Workout complete');
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -55,6 +61,7 @@ export default function WorkoutSummary() {
   const {
     date = 'Today',
     startTime = '',
+    startedAt,
     durationSeconds = 0,
     exercises = [],
     onSave,
@@ -82,15 +89,72 @@ export default function WorkoutSummary() {
       .reduce((acc, s) => acc + s.kg * s.reps, 0);
 
   const [showShare, setShowShare] = useState(false);
+  const [saving,    setSaving]    = useState(false);
 
   const endWorkout     = useStore((s) => s.endWorkout);
   const discardWorkout = useStore((s) => s.discardWorkout);
+  const { mode, profile, user } = useAuthContext();
+  const { darkMode } = usePreferences();
+  const displayName = mode === 'guest' ? 'Lifter' : (profile?.name || 'You');
 
   // ── Handlers ────────────────────────────────────────────────────────────────
-  const handleSave = () => {
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      if (mode === 'authenticated' && user) {
+        const now = new Date().toISOString();
+        const payload = {
+          user_id:         user.id,
+          started_at:      startedAt ?? now,
+          finished_at:     now,
+          duration_secs:   durationSeconds,
+          total_volume_kg: totalVolume,
+          total_sets:      totalSets,
+          notes:           null as string | null,
+          exercises:       exercises
+            .map((ex, i) => ({
+              exercise_id:  null as string | null,
+              name:         ex.name,
+              emoji:        ex.emoji,
+              order_index:  i,
+              sets:         ex.sets
+                .filter((s) => s.completed)
+                .map((s, j) => ({
+                  set_number:   j + 1,
+                  weight_kg:    s.kg,
+                  reps:         s.reps,
+                  one_rm:       s.reps < 37 && s.reps > 0
+                    ? Math.round(s.kg * (36 / (37 - s.reps)) * 10) / 10
+                    : null as number | null,
+                  is_completed: true,
+                })),
+            }))
+            .filter((ex) => ex.sets.length > 0),
+        };
+        await saveWorkout(payload);
+        await updatePersonalRecords(
+          user.id,
+          exercises.map((ex) => ({
+            name:        ex.name,
+            exercise_id: null,
+            sets:        ex.sets.map((s) => ({
+              kg:        s.kg,
+              reps:      s.reps,
+              completed: s.completed,
+            })),
+          })),
+        );
+      }
+    } catch (err) {
+      console.error('Save to Supabase failed:', err);
+      // Still commit locally — don't block the user
+    } finally {
+      setSaving(false);
+    }
     endWorkout();
     if (onSave) { onSave(); } else { navigate('/'); }
   };
+
   const handleDiscard = () => {
     discardWorkout();
     if (onDiscard) { onDiscard(); } else { navigate('/'); }
@@ -98,8 +162,10 @@ export default function WorkoutSummary() {
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
+    <>
+    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     <motion.div
-      className="min-h-screen bg-[#f8f9fa] overflow-y-auto pb-10"
+      className="min-h-screen bg-[#f8f9fa] dark:bg-[#0a0a0a] overflow-y-auto pb-10"
       variants={screenEnter}
       initial="initial"
       animate="animate"
@@ -130,7 +196,7 @@ export default function WorkoutSummary() {
 
           {/* Heading */}
           <h1 className="relative text-[26px] font-black text-white leading-tight mb-1">
-            Great session, Tife! 💪
+            Great session, {displayName}! 💪
           </h1>
 
           {/* Subtext */}
@@ -151,7 +217,7 @@ export default function WorkoutSummary() {
             {/* Duration */}
             <motion.div
               variants={staggerChild}
-              className="bg-white rounded-2xl border border-[#f0f0f0] p-3 flex flex-col items-center gap-1.5"
+              className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-3 flex flex-col items-center gap-1.5"
             >
               <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                 <Clock size={15} className="text-tint" />
@@ -167,7 +233,7 @@ export default function WorkoutSummary() {
             {/* Volume */}
             <motion.div
               variants={staggerChild}
-              className="bg-white rounded-2xl border border-[#f0f0f0] p-3 flex flex-col items-center gap-1.5"
+              className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-3 flex flex-col items-center gap-1.5"
             >
               <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                 <Dumbbell size={15} className="text-tint" />
@@ -187,7 +253,7 @@ export default function WorkoutSummary() {
             {/* Sets */}
             <motion.div
               variants={staggerChild}
-              className="bg-white rounded-2xl border border-[#f0f0f0] p-3 flex flex-col items-center gap-1.5"
+              className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-3 flex flex-col items-center gap-1.5"
             >
               <div className="w-8 h-8 rounded-xl bg-tint-muted flex items-center justify-center">
                 <CheckSquare size={15} className="text-tint" />
@@ -209,8 +275,8 @@ export default function WorkoutSummary() {
               variants={prBurst}
               initial="initial"
               animate="animate"
-              className="rounded-2xl border border-amber-200 px-4 py-3.5 flex items-center gap-3"
-              style={{ background: 'linear-gradient(135deg, #fef3c7, #fde68a)' }}
+              className="rounded-2xl border border-amber-200 dark:border-amber-900/50 px-4 py-3.5 flex items-center gap-3"
+              style={{ background: darkMode ? '#2a1a00' : 'linear-gradient(135deg, #fef3c7, #fde68a)' }}
             >
               <span className="text-2xl shrink-0">🏆</span>
               <div className="min-w-0">
@@ -227,7 +293,7 @@ export default function WorkoutSummary() {
 
         {/* ── 4. Exercise Summary ───────────────────────────────────────────── */}
         <div className="px-4 mt-6">
-          <p className="font-black text-[16px] mb-3">Exercise Summary</p>
+          <p className="font-black text-[16px] mb-3 dark:text-white">Exercise Summary</p>
 
           <motion.div
             className="flex flex-col gap-3"
@@ -239,14 +305,14 @@ export default function WorkoutSummary() {
               <motion.div
                 key={exercise.id}
                 variants={staggerChild}
-                className="bg-white rounded-2xl border border-[#f0f0f0] overflow-hidden"
+                className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] overflow-hidden"
               >
                 {/* Card header */}
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-[#f8f9fa]">
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-[#f8f9fa] dark:border-[#1a1a1a]">
                   <div className="w-9 h-9 rounded-xl bg-tint-muted flex items-center justify-center text-base shrink-0">
                     {exercise.emoji}
                   </div>
-                  <p className="font-bold text-[15px] flex-1 leading-snug">{exercise.name}</p>
+                  <p className="font-bold text-[15px] flex-1 leading-snug dark:text-white">{exercise.name}</p>
                   <p className="text-tint font-bold text-sm shrink-0">
                     {volumePerExercise(exercise).toLocaleString()} kg
                   </p>
@@ -258,22 +324,22 @@ export default function WorkoutSummary() {
                     <div
                       key={i}
                       className={`flex items-center px-4 py-2.5 ${
-                        i < arr.length - 1 ? 'border-b border-[#f8f9fa]' : ''
+                        i < arr.length - 1 ? 'border-b border-[#f8f9fa] dark:border-[#1a1a1a]' : ''
                       }`}
                     >
                       <span className="w-6 text-[12px] text-gray-400 font-semibold shrink-0">
                         {i + 1}
                       </span>
-                      <span className="flex-1 text-[14px] font-bold text-gray-800">
+                      <span className="flex-1 text-[14px] font-bold text-gray-800 dark:text-white">
                         {set.kg} kg
                       </span>
                       <div className="flex items-center justify-end gap-2">
                         {set.isPR ? (
-                          <span className="bg-amber-100 text-amber-700 text-[11px] font-black px-2 py-0.5 rounded-full">
+                          <span className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[11px] font-black px-2 py-0.5 rounded-full">
                             PR
                           </span>
                         ) : (
-                          <span className="text-[14px] font-semibold text-gray-600">
+                          <span className="text-[14px] font-semibold text-gray-600 dark:text-[#aaa]">
                             {set.reps} reps
                           </span>
                         )}
@@ -285,7 +351,7 @@ export default function WorkoutSummary() {
             ))}
 
             {exercises.length === 0 && (
-              <div className="bg-white rounded-2xl border border-[#f0f0f0] py-10 flex flex-col items-center gap-2">
+              <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] py-10 flex flex-col items-center gap-2">
                 <p className="text-3xl">🏋️</p>
                 <p className="text-sm text-gray-400 font-medium">No exercises recorded</p>
               </div>
@@ -297,15 +363,20 @@ export default function WorkoutSummary() {
         <div className="px-4 mt-6 flex flex-col gap-3">
           <motion.button
             onClick={handleSave}
-            className="w-full bg-[#10B981] text-white font-black text-[17px] py-[18px] rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(16,185,129,0.3)]"
-            whileTap={press.whileTap}
+            disabled={saving}
+            className="w-full bg-[#10B981] text-white font-black text-[17px] py-[18px] rounded-2xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(16,185,129,0.3)] disabled:opacity-70"
+            whileTap={saving ? {} : press.whileTap}
           >
-            <Save size={19} />
-            Save Workout
+            {saving ? (
+              <span style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+            ) : (
+              <Save size={19} />
+            )}
+            {saving ? 'Saving…' : 'Save Workout'}
           </motion.button>
           <motion.button
             onClick={handleDiscard}
-            className="w-full bg-white text-[#ef4444] font-semibold text-[15px] py-[16px] rounded-2xl border border-[#f0f0f0]"
+            className="w-full bg-white dark:bg-[#1a1a1a] text-[#ef4444] font-semibold text-[15px] py-[16px] rounded-2xl border border-[#f0f0f0] dark:border-[#333]"
             whileTap={press.whileTap}
           >
             Discard workout
@@ -318,8 +389,8 @@ export default function WorkoutSummary() {
       <AnimatePresence>
         {showShare && (
           <WorkoutShareCard
-            name="Tife"
-            handle="@whoistife_x"
+            name={displayName}
+            handle={profile?.handle ?? ''}
             date={date}
             durationMinutes={Math.round(durationSeconds / 60)}
             totalVolume={totalVolume}
@@ -334,5 +405,6 @@ export default function WorkoutSummary() {
         )}
       </AnimatePresence>
     </motion.div>
+    </>
   );
 }

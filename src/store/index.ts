@@ -18,6 +18,7 @@ type Actions = {
   addExercise: (name: string) => void;
   removeExercise: (exerciseId: string) => void;
   addSet: (exerciseId: string) => void;
+  cloneSet: (exerciseId: string, weight: number, reps: number) => void;
   updateSet: (setId: string, updatedFields: Pick<ExerciseSet, 'reps' | 'weight'>) => void;
   deleteSet: (setId: string) => void;
 };
@@ -81,6 +82,19 @@ const useStore = create<State & Actions>()(
 
       addSet: (exerciseId) => {
         const newSet = createSet(exerciseId);
+        set(({ currentWorkout }) => {
+          const exercise = currentWorkout?.exercises.find((e) => e.id === exerciseId);
+          exercise?.sets.push(newSet);
+        });
+      },
+
+      cloneSet: (exerciseId, weight, reps) => {
+        const newSet: ExerciseSet = {
+          id: crypto.randomUUID(),
+          exerciseId,
+          weight,
+          reps,
+        };
         set(({ currentWorkout }) => {
           const exercise = currentWorkout?.exercises.find((e) => e.id === exerciseId);
           exercise?.sets.push(newSet);
