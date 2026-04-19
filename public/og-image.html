@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    background: #080808;
+    font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    overflow: hidden;
+    position: relative;
+  }
+  .circle1 {
+    position: absolute;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: rgba(16,185,129,0.08);
+    top: -150px; right: -100px;
+  }
+  .circle2 {
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(16,185,129,0.05);
+    bottom: -80px; left: -60px;
+  }
+  /* Subtle grid lines */
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .content {
+    position: relative;
+    z-index: 1;
+    padding: 60px 80px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #10B981;
+    box-shadow: 0 0 12px rgba(16,185,129,0.6);
+  }
+  .brand-name {
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 0.12em;
+  }
+  .url {
+    font-size: 16px;
+    color: #333;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .hero {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px 0;
+  }
+  .tag {
+    font-size: 15px;
+    font-weight: 700;
+    color: #10B981;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 22px;
+  }
+  .title {
+    font-size: 82px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 0.95;
+    letter-spacing: -4px;
+    margin-bottom: 28px;
+  }
+  .title span { color: #10B981; }
+  .sub {
+    font-size: 22px;
+    color: #4b4b4b;
+    font-weight: 400;
+    line-height: 1.4;
+    max-width: 640px;
+  }
+  .bottom-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .stats {
+    display: flex;
+    gap: 52px;
+  }
+  .stat-val {
+    font-size: 30px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1;
+  }
+  .stat-lbl {
+    font-size: 13px;
+    color: #383838;
+    margin-top: 5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 999px;
+    padding: 10px 20px;
+  }
+  .badge-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #10B981;
+  }
+  .badge-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: #10B981;
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+  <div class="circle1"></div>
+  <div class="circle2"></div>
+  <div class="grid"></div>
+  <div class="content">
+    <div class="top-row">
+      <div class="brand">
+        <div class="dot"></div>
+        <span class="brand-name">FITNEX</span>
+      </div>
+      <span class="url">fitnexonline.com</span>
+    </div>
+
+    <div class="hero">
+      <div class="tag">Workout Tracker</div>
+      <div class="title">Train hard.<br/><span>Track harder.</span></div>
+      <div class="sub">Log every set. Beat every record. Share your gains.</div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="stats">
+        <div>
+          <div class="stat-val">51+</div>
+          <div class="stat-lbl">exercises</div>
+        </div>
+        <div>
+          <div class="stat-val">PRs</div>
+          <div class="stat-lbl">auto-detected</div>
+        </div>
+        <div>
+          <div class="stat-val">Top %</div>
+          <div class="stat-lbl">weekly ranking</div>
+        </div>
+        <div>
+          <div class="stat-val">X</div>
+          <div class="stat-lbl">share ready</div>
+        </div>
+      </div>
+      <div class="badge">
+        <div class="badge-dot"></div>
+        <span class="badge-text">Free to use</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

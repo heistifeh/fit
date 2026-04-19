@@ -21,7 +21,7 @@ import WorkoutSummary from '@/pages/WorkoutSummary';
 function AnimatedRoutes({ showGuestNudge }: { showGuestNudge: boolean }) {
   const location = useLocation();
   return (
-    <>
+    <div className="animated-screen-wrapper" style={{ minHeight: '100dvh' }}>
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           {/* Full-screen — no Layout wrapper */}
@@ -37,8 +37,7 @@ function AnimatedRoutes({ showGuestNudge }: { showGuestNudge: boolean }) {
           </Route>
         </Routes>
       </AnimatePresence>
-
-    </>
+    </div>
   );
 }
 
@@ -84,10 +83,12 @@ function AuthGate() {
 
 export default function App() {
   return (
-    <PreferencesProvider>
-      <AuthProvider>
-        <AuthGate />
-      </AuthProvider>
-    </PreferencesProvider>
+    <div style={{ overflowX: 'hidden', width: '100%', maxWidth: '100vw', minHeight: '100dvh', position: 'relative' }}>
+      <PreferencesProvider>
+        <AuthProvider>
+          <AuthGate />
+        </AuthProvider>
+      </PreferencesProvider>
+    </div>
   );
 }

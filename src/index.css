@@ -2,11 +2,53 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Prevent ALL horizontal scroll/wobble ─────────────────────────────────── */
+html,
+body {
+  overflow-x: hidden;
+  overflow-y: scroll;
+  width: 100%;
+  max-width: 100vw;
+  position: relative;
+  overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+/* Pull-to-refresh lockdown (iOS) */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* ── Root app container ────────────────────────────────────────────────────── */
+#root {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100vh;
+  min-height: 100dvh;
+  position: relative;
+}
+
+/* ── Universal box-sizing + text-size-adjust ──────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* ── Remove tap highlight and touch callout ───────────────────────────────── */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
 @layer base {
   body {
     @apply bg-[#f8f9fa] dark:bg-[#0a0a0a] text-gray-900 dark:text-white;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-overflow-scrolling: touch;
   }
 
   button, a {
@@ -15,7 +57,7 @@
 
   /* Prevent iOS from zooming on input focus */
   input, textarea, select {
-    font-size: 16px;
+    font-size: 16px !important;
   }
 
   /* Remove number input spinners */
@@ -26,6 +68,15 @@
   input[type='number'] {
     -moz-appearance: textfield;
   }
+}
+
+/* ── Animation clip — prevents Framer Motion slide animations from causing
+      horizontal overflow during page transitions ────────────────────────── */
+.animated-screen-wrapper {
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
 }
 
 @keyframes slide-up {

@@ -41,8 +41,14 @@ export default function BottomNav() {
   );
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30">
-      <div className="max-w-[390px] mx-auto bg-white dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-[#1a1a1a] flex items-center px-2 pb-safe">
+    <nav className="fixed inset-x-0 bottom-0 z-30 overflow-hidden">
+      <div
+        className="mx-auto bg-white dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-[#1a1a1a] flex items-center px-2 overflow-hidden"
+        style={{
+          maxWidth: 'min(430px, 100vw)',
+          paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
+        }}
+      >
         <Item icon={<Home size={22} />}     label="Home"    active={isHome}    onClick={() => navigate('/')} />
         <Item icon={<Activity size={22} />} label="History" active={isHistory} onClick={() => navigate('/history')} />
 

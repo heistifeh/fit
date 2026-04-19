@@ -111,10 +111,12 @@ export const press = {
 };
 
 // Slide in from right — drill-down navigation (push)
+// x uses "100%" so it stays within the clipped container (animated-screen-wrapper)
+// and never actually overflows the viewport.
 export const slideRight: Variants = {
-  initial: { x: "100%" },
-  animate: { x: 0,      transition: { ...SPRING.snappy } },
-  exit:    { x: "100%", transition: { duration: 0.25, ease: [0.7, 0, 0.84, 0] } },
+  initial: { x: "100%", opacity: 1 },
+  animate: { x: 0,      opacity: 1, transition: { ...SPRING.snappy } },
+  exit:    { x: "30%",  opacity: 0, transition: { duration: 0.2, ease: [0.7, 0, 0.84, 0] } },
 };
 
 // Stagger container for dense lists (sets rows) — tighter 0.03s delay
@@ -123,8 +125,8 @@ export const setRowStagger: Variants = {
   animate: { transition: { staggerChildren: 0.03, delayChildren: 0.05, when: "beforeChildren" } },
 };
 
-// Set row child — quick fade-in
+// Set row child — quick fade-in (y-only to avoid horizontal overflow)
 export const setRowChild: Variants = {
-  initial: { opacity: 0, x: 8 },
-  animate: { opacity: 1, x: 0, transition: { ...SPRING.soft } },
+  initial: { opacity: 0, y: 6 },
+  animate: { opacity: 1, y: 0, transition: { ...SPRING.soft } },
 };
