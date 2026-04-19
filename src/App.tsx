@@ -57,7 +57,7 @@ function AuthGate() {
   if (mode === 'loading') return (
     <div style={{
       background: '#080808',
-      height: '100vh',
+      height: '100dvh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',

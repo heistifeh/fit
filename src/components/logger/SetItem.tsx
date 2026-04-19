@@ -59,11 +59,15 @@ export default function SetItem({
       <input
         type="text"
         inputMode="numeric"
+        pattern="[0-9]*"
         placeholder={placeholderReps ?? '8'}
         value={reps}
         onChange={(e) => {
           const v = e.target.value;
           if (/^\d*$/.test(v)) setReps(v);
+        }}
+        onKeyDown={(e) => {
+          if (['.', ',', 'e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
         }}
         onBlur={() => updateSet(set.id, { reps: parseInt(reps) || 0 })}
         className="flex-1 py-3 px-2 text-center text-base bg-gray-100 dark:bg-zinc-800 rounded-lg outline-none focus:ring-2 focus:ring-tint dark:focus:ring-tint-dark"

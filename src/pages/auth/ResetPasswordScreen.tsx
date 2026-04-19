@@ -130,7 +130,7 @@ export default function ResetPasswordScreen() {
     return (
       <div
         style={{
-          minHeight: '100vh',
+          minHeight: '100dvh',
           background: darkMode ? '#0a0a0a' : '#fff',
           display: 'flex',
           flexDirection: 'column',

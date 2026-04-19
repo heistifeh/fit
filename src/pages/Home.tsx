@@ -81,7 +81,9 @@ export default function Home() {
   const storeWorkouts  = useStore((s) => s.workouts);          // guest / local
   const { weightUnit } = usePreferences();
   const { mode, profile, user } = useAuthContext();
-  const displayName = mode === 'guest' ? 'Lifter' : (profile?.name || user?.user_metadata?.name || 'there');
+  const displayName = mode === 'guest'
+    ? null
+    : (profile?.name || user?.user_metadata?.name || null);
 
   const isAuth  = mode === 'authenticated';
   const isGuest = mode === 'guest';
@@ -172,9 +174,11 @@ export default function Home() {
       {/* ── 1. Header ─────────────────────────────────────────────────────── */}
       <header className="bg-white dark:bg-[#111] px-5 pt-12 pb-4 flex items-start justify-between">
         <div>
-          <p className="text-sm text-gray-400 leading-none mb-1">Welcome back,</p>
+          {mode !== 'guest' && (
+            <p className="text-sm text-gray-400 leading-none mb-1">Welcome back,</p>
+          )}
           <h1 className="text-[28px] font-black leading-tight tracking-tight dark:text-white">
-            {displayName} 👋
+            {mode === 'guest' ? 'Welcome to Fitnex 👋' : `${displayName ?? 'there'} 👋`}
           </h1>
         </div>
         <motion.button
@@ -288,15 +292,15 @@ export default function Home() {
             </span>
           </div>
 
-          <div className="flex items-end gap-1.5 h-16">
+          <div className="flex items-end gap-1.5" style={{ height: 108 }}>
             {weekDays.map(({ isToday, volume }, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <div className="w-full flex items-end" style={{ height: 48 }}>
+                <div className="w-full flex items-end" style={{ height: 88 }}>
                   <div
-                    className={`w-full rounded-t-md transition-all ${
-                      isToday ? 'bg-tint' : 'bg-tint-muted'
+                    className={`w-full rounded-t-md transition-all duration-500 ${
+                      isToday ? 'bg-tint' : 'bg-tint-muted dark:bg-tint/20'
                     }`}
-                    style={{ height: volume > 0 ? Math.max((volume / maxBarVol) * 48, 6) : 4 }}
+                    style={{ height: volume > 0 ? Math.max((volume / maxBarVol) * 80, 4) : 2 }}
                   />
                 </div>
                 <span className="text-[10px] text-gray-400 font-medium">{DAY_LETTERS[i]}</span>
@@ -310,7 +314,8 @@ export default function Home() {
           <motion.div variants={staggerChild}>
             <Link to="/workout/current" className="block">
               <motion.div
-                className="w-full bg-amber-500 rounded-2xl px-5 py-[18px] flex items-center gap-4"
+                className="w-full rounded-2xl px-5 py-[18px] flex items-center gap-4"
+                style={{ background: '#10B981', boxShadow: '0 4px 20px rgba(16,185,129,0.3)' }}
                 whileTap={press.whileTap}
               >
                 <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0" />

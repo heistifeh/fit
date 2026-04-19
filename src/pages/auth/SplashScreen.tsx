@@ -40,7 +40,7 @@ export default function SplashScreen() {
       style={{
         position: 'relative',
         background: '#080808',
-        minHeight: '100vh',
+        minHeight: '100dvh',
         maxWidth: 390,
         margin: '0 auto',
         overflow: 'hidden',
@@ -75,7 +75,7 @@ export default function SplashScreen() {
         style={{
           position: 'relative',
           zIndex: 1,
-          minHeight: '100vh',
+          minHeight: '100dvh',
           display: 'flex',
           flexDirection: 'column',
           padding: '52px 28px 0',
