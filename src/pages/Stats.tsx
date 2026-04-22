@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dumbbell, Calendar, Clock } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StatsScreenSkeleton } from '@/components/Skeleton';
@@ -96,6 +97,8 @@ export default function Stats() {
   const { mode, user } = useAuthContext();
   const storeWorkouts = useStore((s) => s.workouts);
   const { weightUnit } = usePreferences();
+  const isTablet  = useMediaQuery('(min-width: 640px)');
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const [dbWorkouts, setDbWorkouts] = useState<WorkoutWithExercisesAndSets[]>([]);
   const [dbPRs,      setDbPRs]      = useState<PersonalRecord[]>([]);
@@ -226,6 +229,7 @@ export default function Stats() {
 
       {/* ── 1. Header ─────────────────────────────────────────────────────── */}
       <header className="bg-white dark:bg-[#111] border-b border-gray-100 dark:border-[#1a1a1a] px-5 pt-12 pb-0">
+        <div style={{ maxWidth: isDesktop ? 1100 : '100%', margin: '0 auto' }}>
         <h1 className="text-[28px] font-black leading-tight tracking-tight mb-4 dark:text-white">
           Stats
         </h1>
@@ -246,10 +250,12 @@ export default function Stats() {
             </motion.button>
           ))}
         </div>
+        </div>
       </header>
 
       {/* ── Scrollable body ───────────────────────────────────────────────── */}
       <div className="flex-1 pb-[90px]">
+      <div style={{ maxWidth: isDesktop ? 1100 : '100%', margin: '0 auto' }}>
         <AnimatePresence mode="wait">
         {loading ? (
           <motion.div
@@ -270,7 +276,7 @@ export default function Stats() {
           >
             {/* ── 2. Overview Cards ───────────────────────────────────────────── */}
             <motion.div
-              className="px-4 pt-4 grid grid-cols-2 gap-3"
+              className={`px-4 pt-4 gap-3 grid ${isTablet ? 'grid-cols-4' : 'grid-cols-2'}`}
               variants={staggerContainer}
               initial="initial"
               animate="animate"
@@ -489,7 +495,8 @@ export default function Stats() {
           </motion.div>
         )}
         </AnimatePresence>
-      </div>
+      </div>{/* maxWidth wrapper */}
+      </div>{/* flex-1 pb-[90px] */}
     </motion.div>
   );
 }

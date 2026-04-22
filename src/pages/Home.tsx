@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { Bell, Play, ChevronRight, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -85,8 +86,10 @@ export default function Home() {
     ? null
     : (profile?.name || user?.user_metadata?.name || null);
 
-  const isAuth  = mode === 'authenticated';
-  const isGuest = mode === 'guest';
+  const isAuth    = mode === 'authenticated';
+  const isGuest   = mode === 'guest';
+  const isTablet  = useMediaQuery('(min-width: 640px)');
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   // ── Supabase data (authenticated only) ─────────────────────────────────────
   const [dbWorkouts,         setDbWorkouts]         = useState<WorkoutWithExercisesAndSets[]>([]);
@@ -172,7 +175,11 @@ export default function Home() {
       exit={{ opacity: 0, transition: { duration: 0.15 } }}
     >
       {/* ── 1. Header ─────────────────────────────────────────────────────── */}
-      <header className="bg-white dark:bg-[#111] px-5 pt-12 pb-4 flex items-start justify-between">
+      <header className="bg-white dark:bg-[#111] px-5 pt-12 pb-4">
+        <div
+          className="flex items-start justify-between"
+          style={{ maxWidth: isDesktop ? 1200 : '100%', margin: '0 auto' }}
+        >
         <div>
           {mode !== 'guest' && (
             <p className="text-sm text-gray-400 leading-none mb-1">Welcome back,</p>
@@ -188,6 +195,7 @@ export default function Home() {
         >
           <Bell size={19} className="text-gray-500 dark:text-[#555]" />
         </motion.button>
+        </div>
       </header>
 
       {/* ── scrollable body ───────────────────────────────────────────────── */}
@@ -205,10 +213,15 @@ export default function Home() {
           <motion.div
             key="content"
             className="flex-1 px-4 pt-4 flex flex-col gap-4"
+            style={{ maxWidth: isDesktop ? 1200 : '100%', margin: '0 auto', width: '100%' }}
             variants={staggerContainer}
             initial="initial"
             animate="animate"
           >
+          {/* Desktop: 2-column layout wrapper */}
+          <div style={isDesktop ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' } : {}}>
+          {/* Left column on desktop */}
+          <div style={isDesktop ? { display: 'flex', flexDirection: 'column', gap: 16 } : { display: 'contents' }}>
         {/* ── 2. Stats row ────────────────────────────────────────────────── */}
         <div className="grid grid-cols-3 gap-3">
           <motion.div
@@ -340,6 +353,11 @@ export default function Home() {
             </div>
           </motion.button>
         )}
+
+        </div>{/* /left column */}
+
+        {/* Right column on desktop (recent workouts + start CTA) */}
+        <div style={isDesktop ? { display: 'flex', flexDirection: 'column', gap: 16 } : { display: 'contents' }}>
 
         {/* ── 6. Recent workouts ──────────────────────────────────────────── */}
         <motion.div variants={staggerChild}>
@@ -485,6 +503,8 @@ export default function Home() {
         )}
 
         <div className="pb-6" />
+        </div>{/* /right column */}
+        </div>{/* /desktop grid */}
           </motion.div>
         )}
       </AnimatePresence>

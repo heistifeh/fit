@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import { useAuthContext } from '@/context/AuthContext';
 import { SPRING } from '@/animations/fitnex.variants';
 import splashHero from '@/assets/images/splash-hero.png';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import type { AuthMode } from '@/hooks/useAuth';
 
 // ─── Variants ─────────────────────────────────────────────────────────────────
 
@@ -32,8 +34,97 @@ const buttonChild = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+// ─── Desktop: split layout (image left, content right) ───────────────────────
+
+function SplashDesktop({ setMode, continueAsGuest }: { setMode: (m: AuthMode) => void; continueAsGuest: () => void }) {
+  return (
+    <div style={{ display: 'flex', minHeight: '100dvh', background: '#080808' }}>
+      {/* Left — hero image */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        <img
+          src={splashHero}
+          alt=""
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top' }}
+        />
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(to right, rgba(8,8,8,0.1) 60%, #080808 100%)',
+        }} />
+        {/* Brand overlay on image */}
+        <div style={{ position: 'absolute', top: 40, left: 40 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10B981' }} />
+            <span style={{ color: '#fff', fontWeight: 900, fontSize: 14, letterSpacing: '0.14em' }}>FITNEX</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Right — content */}
+      <div style={{
+        width: 460,
+        flexShrink: 0,
+        background: '#080808',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        padding: '60px 48px',
+      }}>
+        {/* Tag */}
+        <span style={{ color: '#10B981', fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 20 }}>
+          Your gym. Tracked.
+        </span>
+
+        {/* Headline */}
+        <h1 style={{ color: '#fff', fontSize: 44, fontWeight: 900, letterSpacing: '-2px', lineHeight: 1.05, margin: '0 0 16px' }}>
+          Train hard.{'\n'}
+          Track{' '}
+          <span style={{ color: '#10B981' }}>harder.</span>
+        </h1>
+
+        <p style={{ color: '#666', fontSize: 16, fontWeight: 400, lineHeight: 1.6, margin: '0 0 48px' }}>
+          Show up. Log it. Get stronger.
+        </p>
+
+        {/* Buttons */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <button
+            onClick={() => setMode('signup')}
+            style={{ width: '100%', background: '#10B981', color: '#fff', fontWeight: 800, fontSize: 16, padding: '17px 0', borderRadius: 16, border: 'none', cursor: 'pointer' }}
+          >
+            Create free account
+          </button>
+          <button
+            onClick={() => setMode('signin')}
+            style={{ width: '100%', background: '#111', color: '#fff', fontWeight: 700, fontSize: 16, padding: '17px 0', borderRadius: 16, border: '1.5px solid rgba(255,255,255,0.15)', cursor: 'pointer' }}
+          >
+            Sign in
+          </button>
+          <button
+            onClick={continueAsGuest}
+            style={{ width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', padding: '10px 0' }}
+          >
+            <span style={{ color: '#555', fontSize: 14, fontWeight: 500 }}>
+              or{' '}
+              <span style={{ color: '#777', fontWeight: 600, textDecoration: 'underline', textUnderlineOffset: 3 }}>
+                continue as guest
+              </span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function SplashScreen() {
   const { setMode, continueAsGuest } = useAuthContext();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+  if (isDesktop) {
+    return <SplashDesktop setMode={setMode} continueAsGuest={continueAsGuest} />;
+  }
 
   return (
     <div

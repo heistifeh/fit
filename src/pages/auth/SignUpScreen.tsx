@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuthContext } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { SPRING } from '@/animations/fitnex.variants';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 // ─── Autofill override ────────────────────────────────────────────────────────
 
@@ -106,6 +107,7 @@ const slideIn = {
 export default function SignUpScreen() {
   const { setMode, signUp, signInWithGoogle } = useAuthContext();
   const { darkMode } = usePreferences();
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const [name,         setName]         = useState('');
   const [email,        setEmail]        = useState('');
@@ -145,18 +147,16 @@ export default function SignUpScreen() {
   const inputIdle = 'bg-[#f8f9fa] dark:bg-[#1a1a1a] border-[#e5e7eb] dark:border-[#333] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-[#555]';
   const inputFocus = 'focus:bg-white dark:focus:bg-[#222] focus:border-tint';
 
-  return (
-    <>
-      <style>{AUTOFILL_STYLE + SPINNER_STYLE}</style>
-
-      <motion.div
-        className="min-h-screen bg-white dark:bg-[#0a0a0a] overflow-y-auto"
-        variants={slideIn}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        style={{ maxWidth: 390, margin: '0 auto', padding: '52px 24px 32px' }}
-      >
+  // ── Inner content (shared between mobile and desktop wrappers) ──────────────
+  const inner = (
+    <motion.div
+      className={isDesktop ? '' : 'min-h-screen bg-white dark:bg-[#0a0a0a] overflow-y-auto'}
+      variants={slideIn}
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      style={isDesktop ? { padding: '48px' } : { maxWidth: 390, margin: '0 auto', padding: '52px 24px 32px' }}
+    >
         {/* ── Back button (hidden once email is sent) ───────────────── */}
         {!emailSent && (
           <motion.button
@@ -368,6 +368,19 @@ export default function SignUpScreen() {
         )}
 
       </motion.div>
+  );
+
+  return (
+    <>
+      <style>{AUTOFILL_STYLE + SPINNER_STYLE}</style>
+      {isDesktop ? (
+        <div className="min-h-dvh bg-[#f8f9fa] dark:bg-[#0a0a0a] flex items-center justify-center p-8">
+          <div className="w-full bg-white dark:bg-[#111] rounded-3xl border border-gray-100 dark:border-[#1a1a1a] overflow-y-auto"
+               style={{ maxWidth: 480 }}>
+            {inner}
+          </div>
+        </div>
+      ) : inner}
     </>
   );
 }
