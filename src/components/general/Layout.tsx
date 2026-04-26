@@ -18,9 +18,9 @@ export default function Layout({ showGuestNudge = false }: LayoutProps) {
   // ── Mobile (< 640px): unchanged — max-width container + bottom nav ──────────
   if (!isTablet) {
     return (
-      <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] min-h-dvh text-gray-900 dark:text-white overflow-x-hidden">
+      <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] min-h-dvh text-gray-900 dark:text-white">
         <div
-          className={`w-full mx-auto min-h-dvh overflow-x-hidden relative ${showNav ? 'pb-24' : ''}`}
+          className={`w-full mx-auto min-h-dvh relative ${showNav ? 'pb-24' : ''}`}
           style={{ maxWidth: 'min(430px, 100vw)' }}
         >
           {showGuestNudge && <GuestNudgeBanner showBanner={isHome} />}
@@ -35,12 +35,20 @@ export default function Layout({ showGuestNudge = false }: LayoutProps) {
   const sidebarWidth = isDesktop ? 260 : 72;
 
   return (
-    <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] min-h-dvh text-gray-900 dark:text-white">
+    <div className="bg-[#f8f9fa] dark:bg-[#0a0a0a] text-gray-900 dark:text-white">
       {showNav && <SideNav isDesktop={isDesktop} />}
+      {/*
+        height: 100dvh + overflow-y: auto makes <main> the scroll container.
+        The sidebar is position:fixed so it never scrolls with the content.
+        Screens inside only need min-height: 100% — they don't manage scroll.
+      */}
       <main
-        className="min-h-dvh overflow-x-hidden"
         style={{
           marginLeft: showNav ? sidebarWidth : 0,
+          height: '100dvh',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
           transition: 'margin-left 0.25s ease',
         }}
       >

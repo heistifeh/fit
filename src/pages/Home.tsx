@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -16,6 +16,7 @@ import { usePreferences } from '@/context/PreferencesContext';
 import { formatWeight } from '@/utils/weight';
 import { useAuthContext } from '@/context/AuthContext';
 import { getWorkouts, type WorkoutWithExercisesAndSets } from '@/lib/supabase';
+import OnboardingTour from '@/components/OnboardingTour';
 
 // ─── Helpers (local / guest store workouts) ──────────────────────────────────
 
@@ -97,6 +98,8 @@ export default function Home() {
   const [fetchError,         setFetchError]         = useState(false);
   const [showNotifications,  setShowNotifications]  = useState(false);
   const [toast,              setToast]              = useState<string | null>(null);
+  const [showOnboarding,     setShowOnboarding]     = useState(false);
+  const onboardingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3500); };
 
@@ -119,6 +122,16 @@ export default function Home() {
     if (!isAuth || !user) { setLoading(false); return; }
     fetchHomeWorkouts();
   }, [isAuth, user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (mode !== 'authenticated') return;
+    const done = localStorage.getItem('fitnex_onboarding_done');
+    if (done) return;
+    onboardingTimerRef.current = setTimeout(() => setShowOnboarding(true), 800);
+    return () => {
+      if (onboardingTimerRef.current) clearTimeout(onboardingTimerRef.current);
+    };
+  }, [mode]);
 
   const onStart = () => { startWorkout(); navigate('/workout/current'); };
 
@@ -223,7 +236,7 @@ export default function Home() {
           {/* Left column on desktop */}
           <div style={isDesktop ? { display: 'flex', flexDirection: 'column', gap: 16 } : { display: 'contents' }}>
         {/* ── 2. Stats row ────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3" data-tour="stats-row">
           <motion.div
             variants={staggerChild}
             className="bg-white dark:bg-[#111] rounded-2xl p-4 border border-[#f0f0f0] dark:border-[#1a1a1a] flex flex-col items-center gap-0.5"
@@ -323,6 +336,7 @@ export default function Home() {
         </motion.div>
 
         {/* ── 5. Start workout CTA ────────────────────────────────────────── */}
+        <div data-tour="start-workout-btn">
         {currentWorkout ? (
           <motion.div variants={staggerChild}>
             <Link to="/workout/current" className="block">
@@ -353,6 +367,7 @@ export default function Home() {
             </div>
           </motion.button>
         )}
+        </div>{/* /data-tour start-workout-btn */}
 
         </div>{/* /left column */}
 
@@ -361,7 +376,7 @@ export default function Home() {
 
         {/* ── 6. Recent workouts ──────────────────────────────────────────── */}
         <motion.div variants={staggerChild}>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3" data-tour="recent-section">
             <p className="font-bold text-[15px]">Recent</p>
             <button
               onClick={() => navigate('/history')}
@@ -555,6 +570,13 @@ export default function Home() {
           >
             {toast}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Onboarding tour ──────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showOnboarding && (
+          <OnboardingTour onComplete={() => setShowOnboarding(false)} />
         )}
       </AnimatePresence>
     </motion.div>

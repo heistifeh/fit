@@ -41,11 +41,12 @@ export default function BottomNav() {
   );
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 overflow-hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-30 overflow-visible" data-tour="bottom-nav">
       <div
-        className="mx-auto bg-white dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-[#1a1a1a] flex items-center px-2 overflow-hidden"
+        className="mx-auto bg-white dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-[#1a1a1a] flex items-center px-2 overflow-visible"
         style={{
           maxWidth: 'min(430px, 100vw)',
+          paddingTop: 8,
           paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
         }}
       >

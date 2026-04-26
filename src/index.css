@@ -83,7 +83,7 @@ body {
 /* ── Animation clip — prevents Framer Motion slide animations from causing
       horizontal overflow during page transitions ────────────────────────── */
 .animated-screen-wrapper {
-  overflow: hidden;
+  overflow-x: clip; /* clips animation bleed without creating a scroll container */
   width: 100%;
   max-width: 100%;
   position: relative;
