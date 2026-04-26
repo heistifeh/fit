@@ -81,7 +81,7 @@ export default function Home() {
   const currentWorkout = useStore((s) => s.currentWorkout);
   const startWorkout   = useStore((s) => s.startWorkout);
   const storeWorkouts  = useStore((s) => s.workouts);          // guest / local
-  const { weightUnit } = usePreferences();
+  const { weightUnit, darkMode } = usePreferences();
   const { mode, profile, user } = useAuthContext();
   const displayName = mode === 'guest'
     ? null
@@ -552,6 +552,20 @@ export default function Home() {
                 <p className="font-bold text-[15px] text-gray-800 dark:text-white">No notifications yet</p>
                 <p className="text-[13px] text-gray-400 text-center leading-relaxed max-w-[240px]">
                   We'll notify you about streaks, PRs and weekly summaries.
+                </p>
+              </div>
+              <div style={{ borderTop: `1px solid ${darkMode ? '#1a1a1a' : '#f0f0f0'}`, marginTop: 4, paddingTop: 16, textAlign: 'center' }}>
+                <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 6 }}>
+                  Have feedback or found a bug?
+                </p>
+                <p
+                  onClick={() => window.open('https://x.com/whoistife_x', '_blank')}
+                  style={{ fontSize: 13, fontWeight: 700, color: darkMode ? '#fff' : '#111', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                  @whoistife_x
                 </p>
               </div>
             </motion.div>
