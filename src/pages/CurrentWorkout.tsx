@@ -10,7 +10,7 @@ import useStore from '@/store';
 import exerciseList from '@/data/exercises';
 import { ExerciseSet, ExerciseWithSets } from '@/types/models';
 import {
-  screenEnter, staggerChild, staggerContainer, checkPunch, rowFlood,
+  screenEnter, staggerChild, staggerContainer, rowFlood,
   sheetSlide, overlayFade, press, SPRING,
 } from '@/animations/fitnex.variants';
 import { useAuthContext } from '@/context/AuthContext';
@@ -41,9 +41,11 @@ type SetRowProps = {
   previous: string | null;
   completed: boolean;
   onToggle: () => void;
+  isFirstIncomplete: boolean;
+  showHint: boolean;
 };
 
-function SetRow({ set, index, previous, completed, onToggle }: SetRowProps) {
+function SetRow({ set, index, previous, completed, onToggle, isFirstIncomplete, showHint }: SetRowProps) {
   const [kg,   setKg]   = useState(set.weight?.toString() ?? '');
   const [reps, setReps] = useState(set.reps?.toString()   ?? '');
   const updateSet = useStore((s) => s.updateSet);
@@ -53,63 +55,101 @@ function SetRow({ set, index, previous, completed, onToggle }: SetRowProps) {
   const inputIdle = 'bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-[#333] text-gray-800 dark:text-white';
 
   return (
-    <motion.div
-      variants={rowFlood}
-      animate={completed ? 'checked' : 'unchecked'}
-      initial={false}
-      layout
-      className="flex items-center gap-2 px-3 py-2"
-    >
-      {/* # */}
-      <span className={`w-7 text-center text-[15px] font-black shrink-0 ${
-        completed ? 'text-tint' : 'text-gray-400 dark:text-[#555]'
-      }`}>
-        {index + 1}
-      </span>
-
-      {/* Previous */}
-      <div className="w-[80px] shrink-0 px-2 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl text-center text-[13px] font-semibold text-gray-500 dark:text-[#666] truncate">
-        {previous ?? '—'}
-      </div>
-
-      {/* kg */}
-      <input
-        type="text"
-        inputMode="decimal"
-        placeholder="0"
-        value={kg}
-        onChange={(e) => { const v = e.target.value; if (/^\d*\.?\d*$/.test(v)) setKg(v); }}
-        onBlur={() => updateSet(set.id, { weight: parseFloat(kg) || 0 })}
-        className={`${inputBase} ${completed ? inputDone : inputIdle}`}
-      />
-
-      {/* Reps */}
-      <input
-        type="text"
-        inputMode="numeric"
-        placeholder="0"
-        value={reps}
-        onChange={(e) => { const v = e.target.value; if (/^\d*$/.test(v)) setReps(v); }}
-        onBlur={() => updateSet(set.id, { reps: parseInt(reps) || 0 })}
-        className={`${inputBase} ${completed ? inputDone : inputIdle}`}
-      />
-
-      {/* ✓ */}
-      <motion.button
-        onClick={onToggle}
-        variants={checkPunch}
+    <>
+      <motion.div
+        variants={rowFlood}
         animate={completed ? 'checked' : 'unchecked'}
         initial={false}
-        className={`w-9 h-9 rounded-xl border-2 flex items-center justify-center shrink-0 ${
-          completed
-            ? 'border-tint bg-tint shadow-[0_2px_8px_rgba(16,185,129,0.35)]'
-            : 'border-gray-200 dark:border-[#444]'
-        }`}
-        whileTap={press.whileTap}
+        layout
+        className="flex items-center gap-2 px-3 py-2"
       >
-        {completed && <Check size={14} className="text-white" strokeWidth={3} />}
-      </motion.button>
-    </motion.div>
+        {/* # */}
+        <span className={`w-7 text-center text-[15px] font-black shrink-0 ${
+          completed ? 'text-tint' : 'text-gray-400 dark:text-[#555]'
+        }`}>
+          {index + 1}
+        </span>
+
+        {/* Previous */}
+        <div className="w-[80px] shrink-0 px-2 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl text-center text-[13px] font-semibold text-gray-500 dark:text-[#666] truncate">
+          {previous ?? '—'}
+        </div>
+
+        {/* kg */}
+        <input
+          type="text"
+          inputMode="decimal"
+          placeholder="0"
+          value={kg}
+          onChange={(e) => { const v = e.target.value; if (/^\d*\.?\d*$/.test(v)) setKg(v); }}
+          onBlur={() => updateSet(set.id, { weight: parseFloat(kg) || 0 })}
+          className={`${inputBase} ${completed ? inputDone : inputIdle}`}
+        />
+
+        {/* Reps */}
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="0"
+          value={reps}
+          onChange={(e) => { const v = e.target.value; if (/^\d*$/.test(v)) setReps(v); }}
+          onBlur={() => updateSet(set.id, { reps: parseInt(reps) || 0 })}
+          className={`${inputBase} ${completed ? inputDone : inputIdle}`}
+        />
+
+        {/* ✓ — completion button, always visible */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          {/* Pulse ring on first uncompleted set to draw attention */}
+          {isFirstIncomplete && !completed && (
+            <motion.div
+              animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0, 0.6] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              style={{
+                position: 'absolute',
+                inset: -4,
+                borderRadius: 14,
+                border: '2px solid #10B981',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
+          <motion.button
+            onClick={onToggle}
+            whileTap={press.whileTap}
+            className={`w-9 h-9 rounded-[10px] flex items-center justify-center transition-all duration-150 ${
+              completed
+                ? 'bg-tint shadow-[0_2px_8px_rgba(16,185,129,0.35)]'
+                : 'bg-white dark:bg-[#1a1a1a] border-2 border-gray-300 dark:border-[#444]'
+            }`}
+          >
+            <svg
+              width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke={completed ? 'white' : '#9ca3af'}
+              strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </motion.button>
+        </div>
+      </motion.div>
+
+      {/* One-time hint: shown below set 1 until first completion */}
+      <AnimatePresence>
+        {index === 0 && showHint && !completed && (
+          <motion.p
+            key="hint"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="text-tint text-center font-semibold"
+            style={{ fontSize: 11, padding: '2px 12px 8px', letterSpacing: '0.01em' }}
+          >
+            Tap ✓ when you finish a set
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -121,13 +161,16 @@ type ExerciseCardProps = {
   previous: string | null;
   onToggleSet: (setId: string) => void;
   onRemove: () => void;
+  showHint: boolean;
 };
 
 function ExerciseCard({
-  exercise, completedSetIds, previous, onToggleSet, onRemove,
+  exercise, completedSetIds, previous, onToggleSet, onRemove, showHint,
 }: ExerciseCardProps) {
   const addSet    = useStore((s) => s.addSet);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const firstIncompleteIdx = exercise.sets.findIndex((s) => !completedSetIds.has(s.id));
 
   return (
     <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a]">
@@ -193,6 +236,8 @@ function ExerciseCard({
                 previous={previous}
                 completed={completedSetIds.has(set.id)}
                 onToggle={() => onToggleSet(set.id)}
+                isFirstIncomplete={i === firstIncompleteIdx}
+                showHint={showHint}
               />
             </motion.div>
           ))}
@@ -229,6 +274,10 @@ export default function CurrentWorkout() {
   const [elapsed,    setElapsed]    = useState(0);
   const [isRunning,  setIsRunning]  = useState(false); // timer off until 'active'
   const [completedSetIds, setCompleted] = useState<Set<string>>(new Set());
+  // Persisted hint: once user completes their first set, never show the hint again
+  const [hasCompletedASet, setHasCompletedASet] = useState(
+    () => localStorage.getItem('fitnex_hint_seen') === 'true',
+  );
   const [restSeconds,  setRestSeconds]  = useState(0);
   const [showRest,     setShowRest]     = useState(false);
   const [addExOpen,    setAddExOpen]    = useState(false);
@@ -334,6 +383,11 @@ export default function CurrentWorkout() {
         next.add(setId);
         setRestSeconds(restTimerSecs);
         setShowRest(true);
+        // Hide the hint permanently after the first set is completed
+        if (!hasCompletedASet) {
+          setHasCompletedASet(true);
+          localStorage.setItem('fitnex_hint_seen', 'true');
+        }
       }
       return next;
     });
@@ -428,7 +482,7 @@ export default function CurrentWorkout() {
             {phase === 'active' && (
               <>
                 {' · '}
-                {currentWorkout.exercises.length} exercise{currentWorkout.exercises.length !== 1 ? 's' : ''}
+                {completedSetIds.size} set{completedSetIds.size !== 1 ? 's' : ''} completed
               </>
             )}
           </p>
@@ -706,7 +760,7 @@ export default function CurrentWorkout() {
                     animate="animate"
                   >
                     <AnimatePresence initial={false}>
-                      {currentWorkout.exercises.map((exercise) => (
+                      {currentWorkout.exercises.map((exercise, exerciseIndex) => (
                         <motion.div
                           key={exercise.id}
                           variants={staggerChild}
@@ -719,6 +773,7 @@ export default function CurrentWorkout() {
                             previous={previousMap[exercise.name] ?? null}
                             onToggleSet={handleToggleSet}
                             onRemove={() => removeExercise(exercise.id)}
+                            showHint={!hasCompletedASet && exerciseIndex === 0}
                           />
                         </motion.div>
                       ))}
