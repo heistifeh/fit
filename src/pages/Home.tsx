@@ -17,6 +17,7 @@ import { formatWeight } from '@/utils/weight';
 import { useAuthContext } from '@/context/AuthContext';
 import { getWorkouts, type WorkoutWithExercisesAndSets } from '@/lib/supabase';
 import OnboardingTour from '@/components/OnboardingTour';
+import CalendarShareCard from '@/components/CalendarShareCard';
 
 // ─── Helpers (local / guest store workouts) ──────────────────────────────────
 
@@ -99,6 +100,7 @@ export default function Home() {
   const [showNotifications,  setShowNotifications]  = useState(false);
   const [toast,              setToast]              = useState<string | null>(null);
   const [showOnboarding,     setShowOnboarding]     = useState(false);
+  const [showCalendarCard,   setShowCalendarCard]   = useState(false);
   const onboardingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3500); };
@@ -273,7 +275,11 @@ export default function Home() {
         {/* ── 3. Weekly day strip ─────────────────────────────────────────── */}
         <motion.div
           variants={staggerChild}
+          data-tour="weekly-strip"
+          onClick={() => setShowCalendarCard(true)}
+          style={{ cursor: 'pointer' }}
           className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-3"
+          whileTap={press.whileTap}
         >
           <div className="grid grid-cols-7">
             {weekDays.map(({ day, isToday, isPast, hasWorkout }, i) => (
@@ -304,6 +310,9 @@ export default function Home() {
               </div>
             ))}
           </div>
+          <p style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center', marginTop: 8 }}>
+            Tap to share your streak
+          </p>
         </motion.div>
 
         {/* ── 4. Workout progress chart ───────────────────────────────────── */}
@@ -584,6 +593,17 @@ export default function Home() {
           >
             {toast}
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Calendar share card ──────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showCalendarCard && (
+          <CalendarShareCard
+            onClose={() => setShowCalendarCard(false)}
+            workouts={dbWorkouts}
+            streak={streak}
+          />
         )}
       </AnimatePresence>
 
