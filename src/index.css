@@ -107,3 +107,8 @@ body {
 .animate-slide-up {
   animation: slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
 }
+
+/* ── Hide bottom nav during onboarding ───────────────────────────────────── */
+.onboarding-active [data-bottom-nav] {
+  display: none !important;
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePageTitle } from '@/hooks/usePageTitle';
@@ -15,8 +15,8 @@ import {
 import { usePreferences } from '@/context/PreferencesContext';
 import { formatWeight } from '@/utils/weight';
 import { useAuthContext } from '@/context/AuthContext';
-import { getWorkouts, type WorkoutWithExercisesAndSets } from '@/lib/supabase';
-import OnboardingTour from '@/components/OnboardingTour';
+import { supabase, getWorkouts, type WorkoutWithExercisesAndSets } from '@/lib/supabase';
+import OnboardingWalkthrough from '@/components/OnboardingWalkthrough';
 import CalendarShareCard from '@/components/CalendarShareCard';
 
 // ─── Helpers (local / guest store workouts) ──────────────────────────────────
@@ -101,7 +101,6 @@ export default function Home() {
   const [toast,              setToast]              = useState<string | null>(null);
   const [showOnboarding,     setShowOnboarding]     = useState(false);
   const [showCalendarCard,   setShowCalendarCard]   = useState(false);
-  const onboardingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3500); };
 
@@ -127,13 +126,31 @@ export default function Home() {
 
   useEffect(() => {
     if (mode !== 'authenticated') return;
-    const done = localStorage.getItem('fitnex_onboarding_done');
-    if (done) return;
-    onboardingTimerRef.current = setTimeout(() => setShowOnboarding(true), 800);
-    return () => {
-      if (onboardingTimerRef.current) clearTimeout(onboardingTimerRef.current);
-    };
-  }, [mode]);
+    const localDone    = localStorage.getItem('fitnex_onboarding_done') === 'true';
+    const supabaseDone = profile?.onboarding_done === true;
+    if (!localDone && !supabaseDone) {
+      const t = setTimeout(() => setShowOnboarding(true), 600);
+      return () => clearTimeout(t);
+    }
+  }, [mode, profile]);
+
+  const handleOnboardingComplete = async () => {
+    localStorage.setItem('fitnex_onboarding_done', 'true');
+    setShowOnboarding(false);
+    if (user?.id) {
+      await supabase.from('profiles').update({ onboarding_done: true }).eq('id', user.id);
+    }
+  };
+
+  // Hide bottom nav while onboarding is visible (z-index stacking context can't beat CSS)
+  useEffect(() => {
+    if (showOnboarding) {
+      document.body.classList.add('onboarding-active');
+    } else {
+      document.body.classList.remove('onboarding-active');
+    }
+    return () => document.body.classList.remove('onboarding-active');
+  }, [showOnboarding]);
 
   const onStart = () => { startWorkout(); navigate('/workout/current'); };
 
@@ -607,10 +624,13 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* ── Onboarding tour ──────────────────────────────────────────────── */}
+      {/* ── Onboarding walkthrough ───────────────────────────────────────── */}
       <AnimatePresence>
         {showOnboarding && (
-          <OnboardingTour onComplete={() => setShowOnboarding(false)} />
+          <OnboardingWalkthrough
+            key="onboarding"
+            onComplete={handleOnboardingComplete}
+          />
         )}
       </AnimatePresence>
     </motion.div>

@@ -28,6 +28,7 @@ export type ProfileData = {
   reminders:       boolean;
   weekly_goal:     number | null;
   volume_goal:     number | null;
+  onboarding_done: boolean;
   created_at:      string;
 };
 
@@ -48,7 +49,7 @@ export const useAuth = (prefs: SyncPrefs) => {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('name, handle, avatar_url, weight_unit, rest_timer_secs, dark_mode, reminders, weekly_goal, volume_goal, created_at')
+      .select('name, handle, avatar_url, weight_unit, rest_timer_secs, dark_mode, reminders, weekly_goal, volume_goal, onboarding_done, created_at')
       .eq('id', userId)
       .single();
 

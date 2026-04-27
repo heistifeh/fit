@@ -41,7 +41,7 @@ export default function BottomNav() {
   );
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 overflow-visible" data-tour="bottom-nav">
+    <nav className="fixed inset-x-0 bottom-0 z-30 overflow-visible" data-bottom-nav data-tour="bottom-nav">
       <div
         className="mx-auto bg-white dark:bg-[#0a0a0a] border-t border-gray-100 dark:border-[#1a1a1a] flex items-center px-2 overflow-visible"
         style={{

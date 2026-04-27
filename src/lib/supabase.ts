@@ -21,6 +21,7 @@ export type Profile = {
   reminders:        boolean;
   weekly_goal:      number;
   volume_goal:      number;
+  onboarding_done:  boolean;
   created_at:       string;
   updated_at:       string;
 };
@@ -396,7 +397,7 @@ export async function updateProfile(
   userId: string,
   updates: Partial<Pick<Profile,
     'name' | 'handle' | 'avatar_url' | 'weight_unit' | 'rest_timer_secs' |
-    'dark_mode' | 'reminders' | 'weekly_goal' | 'volume_goal'
+    'dark_mode' | 'reminders' | 'weekly_goal' | 'volume_goal' | 'onboarding_done'
   >>,
 ): Promise<void> {
   const { error } = await supabase
