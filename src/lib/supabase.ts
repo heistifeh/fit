@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
+import { calculate1RM } from '@/services/setService';
 
 // ─── Client ───────────────────────────────────────────────────────────────────
 
@@ -370,10 +371,7 @@ export async function updatePersonalRecords(
       bestSet.kg * bestSet.reps > Number(currentPR.weight_kg) * (currentPR.reps as number);
 
     if (isNewPR) {
-      const oneRM =
-        bestSet.reps < 37
-          ? Math.round(bestSet.kg * (36 / (37 - bestSet.reps)) * 10) / 10
-          : bestSet.kg;
+      const oneRM = calculate1RM(bestSet.kg, bestSet.reps);
       await supabase.from('personal_records').upsert(
         {
           user_id:       userId,

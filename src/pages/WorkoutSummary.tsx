@@ -5,6 +5,7 @@ import useStore from '@/store';
 import { useAuthContext } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { saveWorkout, updatePersonalRecords } from '@/lib/supabase';
+import { calculate1RM } from '@/services/setService';
 import {
   Clock, Dumbbell, CheckSquare, Share2, Check, Save,
 } from 'lucide-react';
@@ -125,9 +126,7 @@ export default function WorkoutSummary() {
                   set_number:   j + 1,
                   weight_kg:    s.kg,
                   reps:         s.reps,
-                  one_rm:       s.reps < 37 && s.reps > 0
-                    ? Math.round(s.kg * (36 / (37 - s.reps)) * 10) / 10
-                    : null as number | null,
+                  one_rm:       calculate1RM(s.kg, s.reps),
                   is_completed: true,
                 })),
             }))

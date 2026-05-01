@@ -14,6 +14,7 @@ import {
 } from '@/animations/fitnex.variants';
 import { usePreferences } from '@/context/PreferencesContext';
 import { formatWeight } from '@/utils/weight';
+import { calculateStreak } from '@/utils/streak';
 import { useAuthContext } from '@/context/AuthContext';
 import { supabase, getWorkouts, type WorkoutWithExercisesAndSets } from '@/lib/supabase';
 import OnboardingWalkthrough from '@/components/OnboardingWalkthrough';
@@ -24,19 +25,6 @@ import CalendarShareCard from '@/components/CalendarShareCard';
 const fmtKgCompact = (kg: number, unit: 'kg' | 'lbs') => {
   const v = unit === 'lbs' ? kg * 2.2046 : kg;
   return v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(Math.round(v));
-};
-
-const getStreak = (workouts: WorkoutWithExercises[]) => {
-  if (!workouts.length) return 0;
-  const days = new Set(workouts.map((w) => dayjs(w.createdAt).format('YYYY-MM-DD')));
-  let streak = 0;
-  let cur = dayjs();
-  while (days.has(cur.format('YYYY-MM-DD'))) { streak++; cur = cur.subtract(1, 'day'); }
-  if (streak === 0) {
-    cur = dayjs().subtract(1, 'day');
-    while (days.has(cur.format('YYYY-MM-DD'))) { streak++; cur = cur.subtract(1, 'day'); }
-  }
-  return streak;
 };
 
 const getWorkoutEmoji = (names: string) => {
@@ -50,19 +38,6 @@ const getWorkoutEmoji = (names: string) => {
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 // ─── Helpers (Supabase workouts) ─────────────────────────────────────────────
-
-const getDbStreak = (workouts: WorkoutWithExercisesAndSets[]) => {
-  if (!workouts.length) return 0;
-  const days = new Set(workouts.map((w) => dayjs(w.started_at).format('YYYY-MM-DD')));
-  let streak = 0;
-  let cur = dayjs();
-  while (days.has(cur.format('YYYY-MM-DD'))) { streak++; cur = cur.subtract(1, 'day'); }
-  if (streak === 0) {
-    cur = dayjs().subtract(1, 'day');
-    while (days.has(cur.format('YYYY-MM-DD'))) { streak++; cur = cur.subtract(1, 'day'); }
-  }
-  return streak;
-};
 
 const getDbWorkoutLabel = (workout: WorkoutWithExercisesAndSets) => {
   const exs = workout.exercises;
@@ -168,8 +143,8 @@ export default function Home() {
     : storeWorkouts.reduce((a, w) => a + getWorkoutTotalWeight(w), 0);
 
   const streak: number = isAuth
-    ? getDbStreak(dbWorkouts)
-    : getStreak(storeWorkouts);
+    ? calculateStreak(dbWorkouts.map((w) => w.started_at))
+    : calculateStreak(storeWorkouts.map((w) => w.createdAt.toISOString()));
 
   const weekStart = dayjs().startOf('week');
   const weekDays = Array.from({ length: 7 }, (_, i) => {

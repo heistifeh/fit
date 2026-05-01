@@ -2,6 +2,7 @@ import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { AuthProvider, useAuthContext } from '@/context/AuthContext';
 import { PreferencesProvider } from '@/context/PreferencesContext';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import Layout from '@/components/general/Layout';
 import SplashScreen          from '@/pages/auth/SplashScreen';
 import SignUpScreen          from '@/pages/auth/SignUpScreen';
@@ -25,15 +26,15 @@ function AnimatedRoutes({ showGuestNudge }: { showGuestNudge: boolean }) {
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           {/* Full-screen — no Layout wrapper */}
-          <Route path="/workout/summary" element={<WorkoutSummary />} />
+          <Route path="/workout/summary" element={<ErrorBoundary><WorkoutSummary /></ErrorBoundary>} />
 
           <Route element={<Layout showGuestNudge={showGuestNudge} />}>
-            <Route path="/"                element={<Home />} />
-            <Route path="/history"         element={<History />} />
-            <Route path="/stats"           element={<Stats />} />
-            <Route path="/profile"         element={<Profile />} />
-            <Route path="/workout/current" element={<CurrentWorkout />} />
-            <Route path="/workout/:id"     element={<WorkoutDetail />} />
+            <Route path="/"                element={<ErrorBoundary><Home /></ErrorBoundary>} />
+            <Route path="/history"         element={<ErrorBoundary><History /></ErrorBoundary>} />
+            <Route path="/stats"           element={<ErrorBoundary><Stats /></ErrorBoundary>} />
+            <Route path="/profile"         element={<ErrorBoundary><Profile /></ErrorBoundary>} />
+            <Route path="/workout/current" element={<ErrorBoundary><CurrentWorkout /></ErrorBoundary>} />
+            <Route path="/workout/:id"     element={<ErrorBoundary><WorkoutDetail /></ErrorBoundary>} />
           </Route>
         </Routes>
       </AnimatePresence>

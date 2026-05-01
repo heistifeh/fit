@@ -16,6 +16,7 @@ import {
 import { useAuthContext } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { getWorkouts } from '@/lib/supabase';
+import { calculateStreak } from '@/utils/streak';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -341,12 +342,7 @@ export default function CurrentWorkout() {
         }
       }
       setDbPreviousMap(map);
-      // Compute streak from DB workouts
-      const days = new Set(dbWorkouts.map((w) => dayjs(w.started_at).format('YYYY-MM-DD')));
-      let s = 0; let cur = dayjs();
-      while (days.has(cur.format('YYYY-MM-DD'))) { s++; cur = cur.subtract(1, 'day'); }
-      if (s === 0) { cur = dayjs().subtract(1, 'day'); while (days.has(cur.format('YYYY-MM-DD'))) { s++; cur = cur.subtract(1, 'day'); } }
-      setDbStreak(s);
+      setDbStreak(calculateStreak(dbWorkouts.map((w) => w.started_at)));
     }).catch(console.error);
   }, [mode, user]);
 
@@ -416,13 +412,7 @@ export default function CurrentWorkout() {
       };
     }).filter((ex) => ex.sets.length > 0);
 
-    const localStreak = (() => {
-      const days = new Set(workouts.map((w) => dayjs(w.createdAt).format('YYYY-MM-DD')));
-      let s = 0; let cur = dayjs();
-      while (days.has(cur.format('YYYY-MM-DD'))) { s++; cur = cur.subtract(1, 'day'); }
-      if (s === 0) { cur = dayjs().subtract(1, 'day'); while (days.has(cur.format('YYYY-MM-DD'))) { s++; cur = cur.subtract(1, 'day'); } }
-      return s;
-    })();
+    const localStreak = calculateStreak(workouts.map((w) => w.createdAt.toISOString()));
 
     return {
       date:            dayjs(currentWorkout.createdAt).format('ddd, D MMM'),

@@ -14,6 +14,7 @@ import {
 } from '@/animations/fitnex.variants';
 import { usePreferences } from '@/context/PreferencesContext';
 import { formatWeight } from '@/utils/weight';
+import { calculateStreak } from '@/utils/streak';
 import { useAuthContext } from '@/context/AuthContext';
 import useStore from '@/store';
 import {
@@ -27,18 +28,6 @@ dayjs.extend(isoWeek);
 
 const PERIOD_PILLS = ['Week', 'Month', '3 Months', 'All time'];
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-function computeStreak(isoDates: string[]): number {
-  if (!isoDates.length) return 0;
-  const workoutDays = new Set(isoDates.map((d) => dayjs(d).format('YYYY-MM-DD')));
-  let streak = 0;
-  let cursor = dayjs();
-  while (workoutDays.has(cursor.format('YYYY-MM-DD'))) {
-    streak++;
-    cursor = cursor.subtract(1, 'day');
-  }
-  return streak;
-}
 
 function barColor(pct: number) {
   if (pct >= 70) return '#10B981';
@@ -176,7 +165,7 @@ export default function Stats() {
     ? Math.round(periodWorkouts.reduce((a, w) => a + w.durationSecs, 0) / sessions / 60)
     : 0;
 
-  const streak = computeStreak(allSimple.map((w) => w.isoDate));
+  const streak = calculateStreak(allSimple.map((w) => w.isoDate));
 
   // ── Weekly chart data (always Mon–Sun of current and last week) ─────────────
   const weeklyVolumeData = DAYS.map((day, i) => {

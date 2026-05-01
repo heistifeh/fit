@@ -10,6 +10,7 @@ import {
   type WorkoutWithExercisesAndSets, type PersonalRecord,
 } from '@/lib/supabase';
 import { getBadges } from '@/utils/badges';
+import { calculateStreak } from '@/utils/streak';
 import useStore from '@/store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProfileScreenSkeleton } from '@/components/Skeleton';
@@ -245,18 +246,6 @@ const AVATAR_SPINNER_STYLE = `
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-function computeStreak(isoDates: string[]): number {
-  if (!isoDates.length) return 0;
-  const workoutDays = new Set(isoDates.map((d) => dayjs(d).format('YYYY-MM-DD')));
-  let streak = 0;
-  let cursor = dayjs();
-  while (workoutDays.has(cursor.format('YYYY-MM-DD'))) {
-    streak++;
-    cursor = cursor.subtract(1, 'day');
-  }
-  return streak;
-}
-
 export default function Profile() {
   usePageTitle('Profile');
   const { mode, setMode, signOut, profile, user, refreshProfile } = useAuthContext();
@@ -330,8 +319,8 @@ export default function Profile() {
       }, 0);
 
   const streak = mode === 'authenticated'
-    ? computeStreak(dbWorkouts.map((w) => w.started_at))
-    : computeStreak(storeWorkouts.map((w) => w.createdAt.toISOString()));
+    ? calculateStreak(dbWorkouts.map((w) => w.started_at))
+    : calculateStreak(storeWorkouts.map((w) => w.createdAt.toISOString()));
 
   // Check if any workout was started before 7am
   const hasEarlyWorkout = mode === 'authenticated'
