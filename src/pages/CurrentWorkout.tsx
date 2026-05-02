@@ -17,6 +17,7 @@ import { useAuthContext } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { getWorkouts } from '@/lib/supabase';
 import { calculateStreak } from '@/utils/streak';
+import RestTimerPopup from '@/components/RestTimerPopup';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -61,8 +62,8 @@ function SetRow({
   const updateSet = useStore((s) => s.updateSet);
 
   const inputBase = 'set-input flex-1 py-2.5 text-center text-[15px] font-bold rounded-xl outline-none focus:ring-2 focus:ring-tint border transition-colors min-w-0';
-  const inputDone = 'bg-[#f0fdf4] dark:bg-[#0d2e22] border-tint/30 text-tint dark:text-[#6ee7b7]';
-  const inputIdle = 'bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-[#333] text-gray-800 dark:text-white';
+  const inputDone = 'bg-[#d1fae5] dark:bg-[#064e3b] border-tint/30 text-tint dark:text-[#6ee7b7]';
+  const inputIdle = 'bg-[#f8f9fa] dark:bg-[#222] border-[#e5e7eb] dark:border-[#2a2a2a] text-gray-800 dark:text-white';
 
   return (
     <>
@@ -86,7 +87,7 @@ function SetRow({
             }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-              stroke={darkMode ? '#444' : '#d1d5db'} strokeWidth="2.5" strokeLinecap="round">
+              stroke={darkMode ? '#555' : '#d1d5db'} strokeWidth="2.5" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -97,7 +98,7 @@ function SetRow({
 
         {/* # */}
         <span className={`w-7 text-center text-[15px] font-black shrink-0 ${
-          completed ? 'text-tint' : 'text-gray-400 dark:text-[#555]'
+          completed ? 'text-tint' : 'text-gray-400 dark:text-[#444]'
         }`}>
           {index + 1}
         </span>
@@ -143,7 +144,7 @@ function SetRow({
             className={`w-9 h-9 rounded-[10px] flex items-center justify-center transition-all duration-150 ${
               completed
                 ? 'bg-tint shadow-[0_2px_8px_rgba(16,185,129,0.35)]'
-                : 'bg-white dark:bg-[#1a1a1a] border-2 border-gray-300 dark:border-[#444]'
+                : 'bg-white dark:bg-[#222] border-2 border-[#e5e7eb] dark:border-[#333]'
             }`}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -199,7 +200,7 @@ function ExerciseCard({
   const firstIncompleteIdx = exercise.sets.findIndex((s) => !completedSetIds.has(s.id));
 
   return (
-    <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a]">
+    <div className="bg-white dark:bg-[#161616] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a]">
 
       {/* Card header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-[#1a1a1a]">
@@ -215,12 +216,12 @@ function ExerciseCard({
           )}
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            className="w-9 h-9 rounded-xl border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] flex items-center justify-center text-gray-400 relative z-[10] active:bg-gray-50 dark:active:bg-[#222]"
+            className="w-9 h-9 rounded-xl border border-gray-200 dark:border-[#2a2a2a] bg-white dark:bg-[#222] flex items-center justify-center text-gray-400 relative z-[10] active:bg-gray-50 dark:active:bg-[#2a2a2a]"
           >
             <MoreVertical size={16} />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-100 dark:border-[#333] shadow-lg z-[10] w-44 overflow-hidden">
+            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-[#222] rounded-xl border border-gray-100 dark:border-[#2a2a2a] shadow-lg z-[10] w-44 overflow-hidden">
               <button
                 onClick={() => { onRemove(); setMenuOpen(false); }}
                 className="w-full px-4 py-3 text-left text-sm text-red-500 font-semibold active:bg-red-50 dark:active:bg-[#2a1010]"
@@ -235,9 +236,9 @@ function ExerciseCard({
       {/* Table header — SET | KG | REPS | ✓ */}
       <div className="flex items-center gap-2 px-3 pt-3 pb-1">
         <div style={{ width: 24, flexShrink: 0 }} />
-        <span className="w-7 text-center text-[11px] font-bold text-gray-400 dark:text-[#555] tracking-wide shrink-0 uppercase">Set</span>
-        <span className="flex-1 text-center text-[11px] font-bold text-gray-400 dark:text-[#555] tracking-wide uppercase">KG</span>
-        <span className="flex-1 text-center text-[11px] font-bold text-gray-400 dark:text-[#555] tracking-wide uppercase">Reps</span>
+        <span className="w-7 text-center text-[11px] font-bold text-gray-400 dark:text-[#444] tracking-wide shrink-0 uppercase">Set</span>
+        <span className="flex-1 text-center text-[11px] font-bold text-gray-400 dark:text-[#444] tracking-wide uppercase">KG</span>
+        <span className="flex-1 text-center text-[11px] font-bold text-gray-400 dark:text-[#444] tracking-wide uppercase">Reps</span>
         <span className="w-9 shrink-0" />
       </div>
 
@@ -274,7 +275,7 @@ function ExerciseCard({
       {/* Add set */}
       <button
         onClick={() => addSet(exercise.id)}
-        className="w-full py-3 border-t border-dashed border-gray-200 dark:border-[#333] text-sm font-semibold text-gray-400 dark:text-[#555] flex items-center justify-center gap-1.5 active:bg-gray-50 dark:active:bg-[#1a1a1a] rounded-b-2xl"
+        className="w-full py-3 border-t border-dashed border-gray-200 dark:border-[#222] text-sm font-semibold text-gray-400 dark:text-[#444] flex items-center justify-center gap-1.5 active:bg-gray-50 dark:active:bg-[#1e1e1e] rounded-b-2xl"
       >
         <Plus size={14} />
         Add set
@@ -306,8 +307,10 @@ export default function CurrentWorkout() {
   const [hasCompletedASet, setHasCompletedASet] = useState(
     () => localStorage.getItem('fitnex_hint_seen') === 'true',
   );
-  const [restSeconds,  setRestSeconds]  = useState(0);
-  const [showRest,     setShowRest]     = useState(false);
+  const [showRestTimer,    setShowRestTimer]    = useState(false);
+  const [restTimerContext, setRestTimerContext] = useState<{
+    exerciseName: string; setNumber: number; nextSetNumber: number;
+  } | null>(null);
   const [addExOpen,    setAddExOpen]    = useState(false);
   const [showFinishSheet,  setShowFinishSheet]  = useState(false);
   const [showDiscardSheet, setShowDiscardSheet] = useState(false);
@@ -316,7 +319,6 @@ export default function CurrentWorkout() {
   const [dbStreak,     setDbStreak]     = useState(0);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
-  const restRef  = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   // Main timer — only runs when isRunning (set to true on Begin session)
   useEffect(() => {
@@ -327,18 +329,6 @@ export default function CurrentWorkout() {
     }
     return () => clearInterval(timerRef.current);
   }, [isRunning]);
-
-  // Rest timer
-  useEffect(() => {
-    if (!showRest) { clearInterval(restRef.current); return; }
-    restRef.current = setInterval(() => {
-      setRestSeconds((s) => {
-        if (s <= 1) { setShowRest(false); return 0; }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(restRef.current);
-  }, [showRest]);
 
   // Previous values from local Zustand store (guest / fallback)
   const localPreviousMap = useMemo(() => {
@@ -407,22 +397,28 @@ export default function CurrentWorkout() {
   };
 
   const handleToggleSet = (setId: string) => {
+    const isCompleting = !completedSetIds.has(setId);
+
     setCompleted((prev) => {
       const next = new Set(prev);
-      if (next.has(setId)) {
-        next.delete(setId);
-      } else {
-        next.add(setId);
-        setRestSeconds(restTimerSecs);
-        setShowRest(true);
-        // Hide the hint permanently after the first set is completed
-        if (!hasCompletedASet) {
-          setHasCompletedASet(true);
-          localStorage.setItem('fitnex_hint_seen', 'true');
-        }
-      }
+      next.has(setId) ? next.delete(setId) : next.add(setId);
       return next;
     });
+
+    if (isCompleting) {
+      for (const ex of currentWorkout.exercises) {
+        const idx = ex.sets.findIndex((s) => s.id === setId);
+        if (idx !== -1) {
+          setRestTimerContext({ exerciseName: ex.name, setNumber: idx + 1, nextSetNumber: idx + 2 });
+          setShowRestTimer(true);
+          break;
+        }
+      }
+      if (!hasCompletedASet) {
+        setHasCompletedASet(true);
+        localStorage.setItem('fitnex_hint_seen', 'true');
+      }
+    }
   };
 
   const buildSummaryState = () => {
@@ -515,7 +511,7 @@ export default function CurrentWorkout() {
         </div>
         <motion.button
           onClick={handleClose}
-          className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center mt-1 active:bg-gray-200 dark:active:bg-[#222]"
+          className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-[#222] flex items-center justify-center mt-1 active:bg-gray-200 dark:active:bg-[#2a2a2a]"
           whileTap={press.whileTap}
         >
           <X size={18} className="text-gray-500 dark:text-[#888]" />
@@ -539,7 +535,7 @@ export default function CurrentWorkout() {
             onClick={() => { setAddExOpen(false); setSearch(''); }}
           />
           <motion.div
-            className="relative bg-white dark:bg-[#111] rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md flex flex-col"
+            className="relative bg-white dark:bg-[#161616] rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md flex flex-col"
             style={{ maxHeight: '88vh' }}
             variants={sheetSlide}
             initial="initial"
@@ -567,7 +563,7 @@ export default function CurrentWorkout() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 autoFocus
-                className="w-full py-3 px-4 bg-gray-100 dark:bg-[#1a1a1a] text-gray-900 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-tint placeholder:text-gray-400 dark:placeholder:text-[#555]"
+                className="w-full py-3 px-4 bg-gray-100 dark:bg-[#222] text-gray-900 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-tint placeholder:text-gray-400 dark:placeholder:text-[#555]"
               />
             </div>
 
@@ -585,7 +581,7 @@ export default function CurrentWorkout() {
                   key={ex.name}
                   variants={staggerChild}
                   onClick={() => { addExercise(ex.name); setAddExOpen(false); setSearch(''); }}
-                  className="w-full text-left flex items-center gap-3 py-3 border-b border-gray-50 dark:border-[#1a1a1a] last:border-0 rounded-lg"
+                  className="w-full text-left flex items-center gap-3 py-3 border-b border-gray-50 dark:border-[#222] last:border-0 rounded-lg"
                   whileTap={press.whileTap}
                 >
                   <span className="w-9 h-9 rounded-xl bg-tint-muted flex items-center justify-center text-base shrink-0">
@@ -659,7 +655,7 @@ export default function CurrentWorkout() {
                         exit={{ opacity: 0, x: -20, transition: { duration: 0.18 } }}
                         layout
                       >
-                        <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-3.5 flex items-center gap-3">
+                        <div className="bg-white dark:bg-[#161616] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-3.5 flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-tint-muted flex items-center justify-center text-lg shrink-0">
                             {getEmoji(ex.name)}
                           </div>
@@ -724,7 +720,7 @@ export default function CurrentWorkout() {
             <div className="flex-1 px-4 pt-4 pb-[120px] flex flex-col gap-4">
 
               {/* ── Session time card ────────────────────────────────────── */}
-              <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-4 flex items-center">
+              <div className="bg-white dark:bg-[#161616] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-4 flex items-center">
                 <div className="flex items-center gap-3 flex-1">
                   <div className="w-9 h-9 rounded-xl bg-tint-muted flex items-center justify-center shrink-0">
                     <Clock size={18} className="text-tint" />
@@ -742,7 +738,7 @@ export default function CurrentWorkout() {
                 {isRunning ? (
                   <motion.button
                     onClick={() => setIsRunning(false)}
-                    className="w-11 h-11 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] flex items-center justify-center"
+                    className="w-11 h-11 rounded-xl bg-gray-100 dark:bg-[#222] flex items-center justify-center"
                     whileTap={press.whileTap}
                   >
                     <Pause size={18} className="text-gray-500 dark:text-[#888]" />
@@ -764,7 +760,7 @@ export default function CurrentWorkout() {
                   <p className="font-bold text-[15px] dark:text-white">Exercises</p>
                   <motion.button
                     onClick={() => setAddExOpen(true)}
-                    className="flex items-center gap-1.5 border border-gray-200 dark:border-[#333] bg-white dark:bg-[#1a1a1a] text-tint text-sm font-bold px-4 py-2 rounded-xl"
+                    className="flex items-center gap-1.5 border border-gray-200 dark:border-[#2a2a2a] bg-white dark:bg-[#222] text-tint text-sm font-bold px-4 py-2 rounded-xl"
                     whileTap={press.whileTap}
                   >
                     <Plus size={14} strokeWidth={2.5} />
@@ -773,7 +769,7 @@ export default function CurrentWorkout() {
                 </div>
 
                 {currentWorkout.exercises.length === 0 ? (
-                  <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] py-14 flex flex-col items-center gap-2">
+                  <div className="bg-white dark:bg-[#161616] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] py-14 flex flex-col items-center gap-2">
                     <p className="text-3xl">🏋️</p>
                     <p className="font-semibold text-gray-500 dark:text-[#888] text-sm mt-1">No exercises</p>
                     <p className="text-xs text-gray-400 dark:text-[#555]">Tap "Add exercise" to continue</p>
@@ -825,39 +821,6 @@ export default function CurrentWorkout() {
 
       </AnimatePresence>
 
-      {/* ── Rest timer toast ────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showRest && (
-          <motion.div
-            className="fixed inset-x-0 bottom-6 z-40 flex justify-center px-4 pointer-events-none"
-            variants={sheetSlide}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            <div className="bg-[#111] rounded-2xl px-4 py-3 flex items-center gap-3 w-full max-w-[358px] shadow-2xl pointer-events-auto">
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                <Clock size={15} className="text-tint" />
-              </div>
-              <div className="flex-1">
-                <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide leading-none mb-0.5">
-                  Rest timer
-                </p>
-                <p className="text-xl font-black tabular-nums text-tint leading-tight">
-                  {fmtTime(restSeconds)}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowRest(false)}
-                className="bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold px-4 py-2 rounded-xl active:opacity-70"
-              >
-                Skip
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* ── Finish workout confirmation sheet ────────────────────────────────── */}
       <AnimatePresence>
         {showFinishSheet && (
@@ -871,7 +834,7 @@ export default function CurrentWorkout() {
               onClick={() => setShowFinishSheet(false)}
             />
             <motion.div
-              className="relative bg-white dark:bg-[#111] rounded-t-3xl w-full px-5 pt-5 pb-10"
+              className="relative bg-white dark:bg-[#161616] rounded-t-3xl w-full px-5 pt-5 pb-10"
               variants={sheetSlide}
               initial="initial"
               animate="animate"
@@ -899,7 +862,7 @@ export default function CurrentWorkout() {
                 </motion.button>
                 <motion.button
                   onClick={handleDiscardFromSheet}
-                  className="w-full bg-white dark:bg-[#1a1a1a] text-red-500 font-semibold text-[15px] py-[15px] rounded-2xl border border-gray-100 dark:border-[#333]"
+                  className="w-full bg-white dark:bg-[#222] text-red-500 font-semibold text-[15px] py-[15px] rounded-2xl border border-gray-100 dark:border-[#2a2a2a]"
                   whileTap={press.whileTap}
                 >
                   Discard workout
@@ -923,7 +886,7 @@ export default function CurrentWorkout() {
               onClick={() => setShowDiscardSheet(false)}
             />
             <motion.div
-              className="relative bg-white dark:bg-[#111] rounded-t-3xl w-full px-5 pt-5 pb-10"
+              className="relative bg-white dark:bg-[#161616] rounded-t-3xl w-full px-5 pt-5 pb-10"
               variants={sheetSlide}
               initial="initial"
               animate="animate"
@@ -948,7 +911,7 @@ export default function CurrentWorkout() {
                 </motion.button>
                 <motion.button
                   onClick={handleDiscardFromSheet}
-                  className="w-full bg-white dark:bg-[#1a1a1a] text-red-500 font-semibold text-[15px] py-[15px] rounded-2xl border border-gray-100 dark:border-[#333]"
+                  className="w-full bg-white dark:bg-[#222] text-red-500 font-semibold text-[15px] py-[15px] rounded-2xl border border-gray-100 dark:border-[#2a2a2a]"
                   whileTap={press.whileTap}
                 >
                   Discard workout
@@ -972,7 +935,7 @@ export default function CurrentWorkout() {
               onClick={() => setShowEmptyWarning(false)}
             />
             <motion.div
-              className="relative bg-white dark:bg-[#111] rounded-t-3xl w-full px-5 pt-5 pb-10"
+              className="relative bg-white dark:bg-[#161616] rounded-t-3xl w-full px-5 pt-5 pb-10"
               variants={sheetSlide}
               initial="initial"
               animate="animate"
@@ -1003,7 +966,7 @@ export default function CurrentWorkout() {
                       setShowEmptyWarning(false);
                       setTimeout(() => setShowFinishSheet(true), 180);
                     }}
-                    className="w-full bg-white dark:bg-[#1a1a1a] text-gray-500 font-semibold text-[15px] py-[15px] rounded-2xl border border-gray-100 dark:border-[#333]"
+                    className="w-full bg-white dark:bg-[#222] text-gray-500 font-semibold text-[15px] py-[15px] rounded-2xl border border-gray-100 dark:border-[#2a2a2a]"
                     whileTap={press.whileTap}
                   >
                     Finish anyway
@@ -1012,6 +975,20 @@ export default function CurrentWorkout() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Rest timer popup ─────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showRestTimer && restTimerContext && (
+          <RestTimerPopup
+            key="rest-timer"
+            exerciseName={restTimerContext.exerciseName}
+            setNumber={restTimerContext.setNumber}
+            nextSetNumber={restTimerContext.nextSetNumber}
+            defaultSeconds={restTimerSecs}
+            onClose={() => setShowRestTimer(false)}
+          />
         )}
       </AnimatePresence>
 
