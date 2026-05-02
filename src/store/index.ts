@@ -21,6 +21,7 @@ type Actions = {
   cloneSet: (exerciseId: string, weight: number, reps: number) => void;
   updateSet: (setId: string, updatedFields: Pick<ExerciseSet, 'reps' | 'weight'>) => void;
   deleteSet: (setId: string) => void;
+  removeSet: (exerciseId: string, setId: string) => void;
 };
 
 // Revive date strings back to Date objects after loading from localStorage
@@ -122,6 +123,14 @@ const useStore = create<State & Actions>()(
               (e) => e.sets.length > 0
             );
           }
+        });
+      },
+
+      removeSet: (exerciseId, setId) => {
+        set(({ currentWorkout }) => {
+          const exercise = currentWorkout?.exercises.find((e) => e.id === exerciseId);
+          if (!exercise || exercise.sets.length <= 1) return;
+          exercise.sets = exercise.sets.filter((s) => s.id !== setId);
         });
       },
     })),

@@ -229,7 +229,7 @@ export default function SignUpScreen() {
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Tife"
+                    placeholder="John Doe"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className={`${inputBase} ${inputIdle} ${inputFocus} ${name ? 'pr-11' : ''}`}

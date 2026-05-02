@@ -112,3 +112,12 @@ body {
 .onboarding-active [data-bottom-nav] {
   display: none !important;
 }
+
+/* ── Workout set row — previous value placeholder styling ─────────────────── */
+.set-input::placeholder {
+  color: #c4b5fd;
+  font-weight: 500;
+}
+.dark .set-input::placeholder {
+  color: #4b5563;
+}

@@ -559,7 +559,7 @@ export default function Profile() {
                     }}
                   >
                     <span className="text-white font-black" style={{ fontSize: 30 }}>
-                      {(profile?.name || user?.user_metadata?.name || 'U')[0].toUpperCase()}
+                      {(profile?.name || user?.user_metadata?.name || 'U').split(' ')[0][0]?.toUpperCase() ?? 'U'}
                     </span>
                   </div>
                 )}

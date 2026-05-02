@@ -59,9 +59,9 @@ export default function Home() {
   const storeWorkouts  = useStore((s) => s.workouts);          // guest / local
   const { weightUnit, darkMode } = usePreferences();
   const { mode, profile, user } = useAuthContext();
-  const displayName = mode === 'guest'
+  const firstName = mode === 'guest'
     ? null
-    : (profile?.name || user?.user_metadata?.name || null);
+    : (profile?.name || user?.user_metadata?.name || 'there').split(' ')[0];
 
   const isAuth    = mode === 'authenticated';
   const isGuest   = mode === 'guest';
@@ -192,7 +192,7 @@ export default function Home() {
             <p className="text-sm text-gray-400 leading-none mb-1">Welcome back,</p>
           )}
           <h1 className="text-[28px] font-black leading-tight tracking-tight dark:text-white">
-            {mode === 'guest' ? 'Welcome to Fitnex 👋' : `${displayName ?? 'there'} 👋`}
+            {mode === 'guest' ? 'Welcome to Fitnex 👋' : `${firstName ?? 'there'} 👋`}
           </h1>
         </div>
         <motion.button

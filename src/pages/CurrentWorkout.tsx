@@ -36,22 +36,31 @@ const getEmoji = (name: string) => {
 
 // ─── SetRow ─────────────────────────────────────────────────────────────────
 
+type PrevData = { weight: string; reps: string } | null;
+
 type SetRowProps = {
   set: ExerciseSet;
   index: number;
-  previous: string | null;
+  prevWeight: string | null;
+  prevReps: string | null;
   completed: boolean;
   onToggle: () => void;
   isFirstIncomplete: boolean;
   showHint: boolean;
+  canDelete: boolean;
+  onRemove: () => void;
+  darkMode: boolean;
 };
 
-function SetRow({ set, index, previous, completed, onToggle, isFirstIncomplete, showHint }: SetRowProps) {
+function SetRow({
+  set, index, prevWeight, prevReps, completed, onToggle,
+  isFirstIncomplete, showHint, canDelete, onRemove, darkMode,
+}: SetRowProps) {
   const [kg,   setKg]   = useState(set.weight?.toString() ?? '');
   const [reps, setReps] = useState(set.reps?.toString()   ?? '');
   const updateSet = useStore((s) => s.updateSet);
 
-  const inputBase = 'flex-1 py-2.5 text-center text-[15px] font-bold rounded-xl outline-none focus:ring-2 focus:ring-tint border transition-colors min-w-0';
+  const inputBase = 'set-input flex-1 py-2.5 text-center text-[15px] font-bold rounded-xl outline-none focus:ring-2 focus:ring-tint border transition-colors min-w-0';
   const inputDone = 'bg-[#f0fdf4] dark:bg-[#0d2e22] border-tint/30 text-tint dark:text-[#6ee7b7]';
   const inputIdle = 'bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-[#333] text-gray-800 dark:text-white';
 
@@ -64,6 +73,28 @@ function SetRow({ set, index, previous, completed, onToggle, isFirstIncomplete, 
         layout
         className="flex items-center gap-2 px-3 py-2"
       >
+        {/* Delete button or fixed-width spacer for alignment */}
+        {canDelete ? (
+          <button
+            onClick={onRemove}
+            style={{
+              width: 24, height: 24, borderRadius: 6,
+              background: 'none', border: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', padding: 0,
+              WebkitTapHighlightColor: 'transparent', flexShrink: 0,
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+              stroke={darkMode ? '#444' : '#d1d5db'} strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        ) : (
+          <div style={{ width: 24, flexShrink: 0 }} />
+        )}
+
         {/* # */}
         <span className={`w-7 text-center text-[15px] font-black shrink-0 ${
           completed ? 'text-tint' : 'text-gray-400 dark:text-[#555]'
@@ -71,16 +102,11 @@ function SetRow({ set, index, previous, completed, onToggle, isFirstIncomplete, 
           {index + 1}
         </span>
 
-        {/* Previous */}
-        <div className="w-[80px] shrink-0 px-2 py-2 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#333] rounded-xl text-center text-[13px] font-semibold text-gray-500 dark:text-[#666] truncate">
-          {previous ?? '—'}
-        </div>
-
         {/* kg */}
         <input
           type="text"
           inputMode="decimal"
-          placeholder="0"
+          placeholder={prevWeight ?? '0'}
           value={kg}
           onChange={(e) => { const v = e.target.value; if (/^\d*\.?\d*$/.test(v)) setKg(v); }}
           onBlur={() => updateSet(set.id, { weight: parseFloat(kg) || 0 })}
@@ -91,7 +117,7 @@ function SetRow({ set, index, previous, completed, onToggle, isFirstIncomplete, 
         <input
           type="text"
           inputMode="numeric"
-          placeholder="0"
+          placeholder={prevReps ?? '0'}
           value={reps}
           onChange={(e) => { const v = e.target.value; if (/^\d*$/.test(v)) setReps(v); }}
           onBlur={() => updateSet(set.id, { reps: parseInt(reps) || 0 })}
@@ -106,11 +132,8 @@ function SetRow({ set, index, previous, completed, onToggle, isFirstIncomplete, 
               animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0, 0.6] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               style={{
-                position: 'absolute',
-                inset: -4,
-                borderRadius: 14,
-                border: '2px solid #10B981',
-                pointerEvents: 'none',
+                position: 'absolute', inset: -4, borderRadius: 14,
+                border: '2px solid #10B981', pointerEvents: 'none',
               }}
             />
           )}
@@ -123,8 +146,7 @@ function SetRow({ set, index, previous, completed, onToggle, isFirstIncomplete, 
                 : 'bg-white dark:bg-[#1a1a1a] border-2 border-gray-300 dark:border-[#444]'
             }`}
           >
-            <svg
-              width="14" height="14" viewBox="0 0 24 24" fill="none"
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
               stroke={completed ? 'white' : '#9ca3af'}
               strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
             >
@@ -159,18 +181,21 @@ function SetRow({ set, index, previous, completed, onToggle, isFirstIncomplete, 
 type ExerciseCardProps = {
   exercise: ExerciseWithSets;
   completedSetIds: Set<string>;
-  previous: string | null;
+  prevData: PrevData;
   onToggleSet: (setId: string) => void;
+  onRemoveSet: (setId: string) => void;
   onRemove: () => void;
   showHint: boolean;
+  darkMode: boolean;
 };
 
 function ExerciseCard({
-  exercise, completedSetIds, previous, onToggleSet, onRemove, showHint,
+  exercise, completedSetIds, prevData, onToggleSet, onRemoveSet, onRemove, showHint, darkMode,
 }: ExerciseCardProps) {
-  const addSet    = useStore((s) => s.addSet);
+  const addSet = useStore((s) => s.addSet);
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const canDelete = exercise.sets.length > 1;
   const firstIncompleteIdx = exercise.sets.findIndex((s) => !completedSetIds.has(s.id));
 
   return (
@@ -186,10 +211,7 @@ function ExerciseCard({
         {/* Menu */}
         <div className="relative">
           {menuOpen && (
-            <div
-              className="fixed inset-0 z-[9]"
-              onClick={() => setMenuOpen(false)}
-            />
+            <div className="fixed inset-0 z-[9]" onClick={() => setMenuOpen(false)} />
           )}
           <button
             onClick={() => setMenuOpen((v) => !v)}
@@ -210,10 +232,10 @@ function ExerciseCard({
         </div>
       </div>
 
-      {/* Table header */}
+      {/* Table header — SET | KG | REPS | ✓ */}
       <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+        <div style={{ width: 24, flexShrink: 0 }} />
         <span className="w-7 text-center text-[11px] font-bold text-gray-400 dark:text-[#555] tracking-wide shrink-0 uppercase">Set</span>
-        <span className="w-[80px] text-center text-[11px] font-bold text-gray-400 dark:text-[#555] tracking-wide shrink-0 uppercase">Previous</span>
         <span className="flex-1 text-center text-[11px] font-bold text-gray-400 dark:text-[#555] tracking-wide uppercase">KG</span>
         <span className="flex-1 text-center text-[11px] font-bold text-gray-400 dark:text-[#555] tracking-wide uppercase">Reps</span>
         <span className="w-9 shrink-0" />
@@ -227,18 +249,22 @@ function ExerciseCard({
               key={set.id}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto', transition: { ...SPRING.soft } }}
-              exit={{ opacity: 0, height: 0, transition: { duration: 0.18 } }}
+              exit={{ opacity: 0, height: 0, marginBottom: 0, transition: { duration: 0.2, ease: 'easeOut' } }}
               layout
               style={{ overflow: 'hidden' }}
             >
               <SetRow
                 set={set}
                 index={i}
-                previous={previous}
+                prevWeight={prevData?.weight ?? null}
+                prevReps={prevData?.reps ?? null}
                 completed={completedSetIds.has(set.id)}
                 onToggle={() => onToggleSet(set.id)}
                 isFirstIncomplete={i === firstIncompleteIdx}
                 showHint={showHint}
+                canDelete={canDelete}
+                onRemove={() => onRemoveSet(set.id)}
+                darkMode={darkMode}
               />
             </motion.div>
           ))}
@@ -266,9 +292,10 @@ export default function CurrentWorkout() {
   const workouts        = useStore((s) => s.workouts);
   const addExercise     = useStore((s) => s.addExercise);
   const removeExercise  = useStore((s) => s.removeExercise);
+  const removeSet       = useStore((s) => s.removeSet);
   const discardWorkout  = useStore((s) => s.discardWorkout);
   const { mode, user }  = useAuthContext();
-  const { restTimerSecs } = usePreferences();
+  const { restTimerSecs, darkMode } = usePreferences();
 
   // Phase: 'setup' = no timer, add exercises; 'active' = timer running
   const [phase,        setPhase]       = useState<'setup' | 'active'>('setup');
@@ -315,12 +342,12 @@ export default function CurrentWorkout() {
 
   // Previous values from local Zustand store (guest / fallback)
   const localPreviousMap = useMemo(() => {
-    const map: Record<string, string | null> = {};
+    const map: Record<string, PrevData> = {};
     for (const w of workouts) {
       for (const ex of w.exercises) {
         if (!(ex.name in map)) {
           const last = [...ex.sets].reverse().find((s) => s.weight && s.reps);
-          map[ex.name] = last ? `${last.weight} × ${last.reps}` : null;
+          map[ex.name] = last ? { weight: String(last.weight), reps: String(last.reps) } : null;
         }
       }
     }
@@ -328,16 +355,16 @@ export default function CurrentWorkout() {
   }, [workouts]);
 
   // Previous values + streak from Supabase (authenticated users)
-  const [dbPreviousMap, setDbPreviousMap] = useState<Record<string, string | null>>({});
+  const [dbPreviousMap, setDbPreviousMap] = useState<Record<string, PrevData>>({});
   useEffect(() => {
     if (mode !== 'authenticated' || !user) return;
     getWorkouts(user.id).then((dbWorkouts) => {
-      const map: Record<string, string | null> = {};
+      const map: Record<string, PrevData> = {};
       for (const w of dbWorkouts) {
         for (const ex of w.exercises) {
           if (!(ex.name in map)) {
             const last = [...ex.sets].reverse().find((s) => s.weight_kg && s.reps);
-            map[ex.name] = last ? `${last.weight_kg} × ${last.reps}` : null;
+            map[ex.name] = last ? { weight: String(last.weight_kg), reps: String(last.reps) } : null;
           }
         }
       }
@@ -369,6 +396,15 @@ export default function CurrentWorkout() {
   };
 
   // ── Active phase handlers ───────────────────────────────────────────────────
+
+  const handleRemoveSet = (exerciseId: string, setId: string) => {
+    removeSet(exerciseId, setId);
+    setCompleted((prev) => {
+      const next = new Set(prev);
+      next.delete(setId);
+      return next;
+    });
+  };
 
   const handleToggleSet = (setId: string) => {
     setCompleted((prev) => {
@@ -760,10 +796,12 @@ export default function CurrentWorkout() {
                           <ExerciseCard
                             exercise={exercise}
                             completedSetIds={completedSetIds}
-                            previous={previousMap[exercise.name] ?? null}
+                            prevData={previousMap[exercise.name] ?? null}
                             onToggleSet={handleToggleSet}
+                            onRemoveSet={(setId) => handleRemoveSet(exercise.id, setId)}
                             onRemove={() => removeExercise(exercise.id)}
                             showHint={!hasCompletedASet && exerciseIndex === 0}
+                            darkMode={darkMode}
                           />
                         </motion.div>
                       ))}
