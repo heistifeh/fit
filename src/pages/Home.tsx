@@ -538,37 +538,39 @@ export default function Home() {
               onClick={() => setShowNotifications(false)}
             />
             <motion.div
-              className="relative bg-white dark:bg-[#111] rounded-t-3xl w-full px-5 pt-4 pb-10"
+              className="relative bg-white dark:bg-[#111] rounded-t-3xl w-full"
+              style={{ minHeight: '75dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
               variants={sheetSlide}
               initial="initial"
               animate="animate"
               exit="exit"
             >
-              <div className="flex justify-center mb-4">
-                <div className="w-9 h-1 bg-gray-200 dark:bg-[#333] rounded-full" />
+              <div style={{ width: 40, height: 5, borderRadius: 3, background: darkMode ? '#333' : '#e5e7eb', margin: '12px auto 8px', flexShrink: 0 }} />
+              <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '0 20px 40px' }}>
+                <p className="text-[18px] font-black text-gray-900 dark:text-white mb-5">Notifications</p>
+                <div className="flex flex-col items-center gap-3 py-8">
+                  <span className="text-4xl">🔔</span>
+                  <p className="font-bold text-[15px] text-gray-800 dark:text-white">No notifications yet</p>
+                  <p className="text-[13px] text-gray-400 text-center leading-relaxed max-w-[240px]">
+                    We'll notify you about streaks, PRs and weekly summaries.
+                  </p>
+                </div>
+                <div style={{ borderTop: `1px solid ${darkMode ? '#1a1a1a' : '#f0f0f0'}`, marginTop: 4, paddingTop: 16, textAlign: 'center' }}>
+                  <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 6 }}>
+                    Have feedback or found a bug?
+                  </p>
+                  <p
+                    onClick={() => window.open('https://x.com/whoistife_x', '_blank')}
+                    style={{ fontSize: 13, fontWeight: 700, color: darkMode ? '#fff' : '#111', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                    @whoistife_x
+                  </p>
+                </div>
               </div>
-              <p className="text-[18px] font-black text-gray-900 dark:text-white mb-5">Notifications</p>
-              <div className="flex flex-col items-center gap-3 py-8">
-                <span className="text-4xl">🔔</span>
-                <p className="font-bold text-[15px] text-gray-800 dark:text-white">No notifications yet</p>
-                <p className="text-[13px] text-gray-400 text-center leading-relaxed max-w-[240px]">
-                  We'll notify you about streaks, PRs and weekly summaries.
-                </p>
-              </div>
-              <div style={{ borderTop: `1px solid ${darkMode ? '#1a1a1a' : '#f0f0f0'}`, marginTop: 4, paddingTop: 16, textAlign: 'center' }}>
-                <p style={{ fontSize: 12, color: '#9ca3af', marginBottom: 6 }}>
-                  Have feedback or found a bug?
-                </p>
-                <p
-                  onClick={() => window.open('https://x.com/whoistife_x', '_blank')}
-                  style={{ fontSize: 13, fontWeight: 700, color: darkMode ? '#fff' : '#111', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                  </svg>
-                  @whoistife_x
-                </p>
-              </div>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom, transparent, ${darkMode ? 'rgba(17,17,17,0.95)' : 'rgba(255,255,255,0.95)'})`, pointerEvents: 'none' }} />
             </motion.div>
           </div>
         )}

@@ -535,7 +535,7 @@ export default function CurrentWorkout() {
             onClick={() => { setAddExOpen(false); setSearch(''); }}
           />
           <motion.div
-            className="relative bg-white dark:bg-[#161616] rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md flex flex-col"
+            className="relative bg-white dark:bg-[#161616] rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md flex flex-col overflow-hidden min-h-[75dvh] sm:min-h-0"
             style={{ maxHeight: '88vh' }}
             variants={sheetSlide}
             initial="initial"
@@ -543,7 +543,7 @@ export default function CurrentWorkout() {
             exit="exit"
           >
             <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <div className="w-10 h-1 bg-gray-200 dark:bg-[#333] rounded-full" />
+              <div style={{ width: 40, height: 5, borderRadius: 3, background: darkMode ? '#333' : '#e5e7eb' }} />
             </div>
 
             <div className="flex items-center justify-between px-5 py-4">
@@ -594,6 +594,7 @@ export default function CurrentWorkout() {
                 </motion.button>
               ))}
             </motion.div>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom, transparent, ${darkMode ? 'rgba(22,22,22,0.95)' : 'rgba(255,255,255,0.95)'})`, pointerEvents: 'none' }} />
           </motion.div>
         </div>
       )}
@@ -835,14 +836,13 @@ export default function CurrentWorkout() {
             />
             <motion.div
               className="relative bg-white dark:bg-[#161616] rounded-t-3xl w-full px-5 pt-5 pb-10"
+              style={{ minHeight: '75dvh' }}
               variants={sheetSlide}
               initial="initial"
               animate="animate"
               exit="exit"
             >
-              <div className="flex justify-center mb-4">
-                <div className="w-10 h-1 bg-gray-200 dark:bg-[#333] rounded-full" />
-              </div>
+              <div style={{ width: 40, height: 5, borderRadius: 3, background: darkMode ? '#333' : '#e5e7eb', margin: '0 auto 16px' }} />
 
               <p className="text-[20px] font-black text-gray-900 dark:text-white mb-1">Finish workout?</p>
               <p className="text-[14px] text-gray-400 font-medium mb-6">
@@ -887,14 +887,13 @@ export default function CurrentWorkout() {
             />
             <motion.div
               className="relative bg-white dark:bg-[#161616] rounded-t-3xl w-full px-5 pt-5 pb-10"
+              style={{ minHeight: '75dvh' }}
               variants={sheetSlide}
               initial="initial"
               animate="animate"
               exit="exit"
             >
-              <div className="flex justify-center mb-4">
-                <div className="w-10 h-1 bg-gray-200 dark:bg-[#333] rounded-full" />
-              </div>
+              <div style={{ width: 40, height: 5, borderRadius: 3, background: darkMode ? '#333' : '#e5e7eb', margin: '0 auto 16px' }} />
 
               <p className="text-[20px] font-black text-gray-900 dark:text-white mb-1">Discard workout?</p>
               <p className="text-[14px] text-gray-400 font-medium mb-6">
@@ -936,14 +935,13 @@ export default function CurrentWorkout() {
             />
             <motion.div
               className="relative bg-white dark:bg-[#161616] rounded-t-3xl w-full px-5 pt-5 pb-10"
+              style={{ minHeight: '75dvh' }}
               variants={sheetSlide}
               initial="initial"
               animate="animate"
               exit="exit"
             >
-              <div className="flex justify-center mb-4">
-                <div className="w-10 h-1 bg-gray-200 dark:bg-[#333] rounded-full" />
-              </div>
+              <div style={{ width: 40, height: 5, borderRadius: 3, background: darkMode ? '#333' : '#e5e7eb', margin: '0 auto 16px' }} />
               <p className="text-[20px] font-black text-gray-900 dark:text-white mb-1">
                 {currentWorkout.exercises.length === 0 ? 'No exercises added' : 'No sets completed'}
               </p>

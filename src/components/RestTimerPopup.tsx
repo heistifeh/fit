@@ -105,7 +105,8 @@ function RestTimerPopup({
           backdropFilter: 'blur(3px)',
           WebkitBackdropFilter: 'blur(3px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 500, padding: '0 20px',
+          zIndex: 500, padding: '20px 20px',
+          overflowY: 'auto',
         }}
       >
         {/* Timer card — stops tap propagation */}
@@ -119,6 +120,8 @@ function RestTimerPopup({
             background: '#111', borderRadius: 26,
             padding: '24px 24px 20px', width: '100%', maxWidth: 320,
             textAlign: 'center', position: 'relative',
+            maxHeight: 'calc(100dvh - 40px)', overflowY: 'auto',
+            flexShrink: 0,
           }}
         >
           {/* Sound toggle */}

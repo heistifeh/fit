@@ -495,13 +495,16 @@ export default function WorkoutShareCard(props: ShareCardProps) {
 
         {/* Main sheet */}
         <motion.div
-          className="relative mt-auto w-full max-h-[95vh] overflow-y-auto rounded-t-3xl bg-[#0c0c0c] flex flex-col"
+          className="relative mt-auto w-full max-h-[95vh] overflow-hidden min-h-[75dvh] rounded-t-3xl bg-[#0c0c0c] flex flex-col"
           variants={sheetSlide}
           initial="initial"
           animate="animate"
           exit="exit"
         >
+          {/* Drag handle */}
+          <div style={{ width: 40, height: 5, borderRadius: 3, background: '#333', margin: '12px auto 4px', flexShrink: 0 }} />
 
+          <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-5 pb-2 shrink-0">
             <p className="text-white font-black text-[17px]">Share workout</p>
@@ -696,6 +699,10 @@ export default function WorkoutShareCard(props: ShareCardProps) {
               </pre>
             </div>
           </div>
+          </div>
+
+          {/* Scroll gradient */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, background: 'linear-gradient(to bottom, transparent, rgba(12,12,12,0.95))', pointerEvents: 'none' }} />
 
         </motion.div>
 
@@ -714,6 +721,7 @@ export default function WorkoutShareCard(props: ShareCardProps) {
               />
               <motion.div
                 className="relative bg-white dark:bg-[#111] rounded-t-3xl w-full"
+                style={{ minHeight: '75dvh' }}
                 variants={sheetSlide}
                 initial="initial"
                 animate="animate"

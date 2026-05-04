@@ -198,6 +198,7 @@ function BottomSheet({
   title: string;
   children: React.ReactNode;
 }) {
+  const { darkMode } = usePreferences();
   return (
     <AnimatePresence>
       {open && (
@@ -212,18 +213,22 @@ function BottomSheet({
             onClick={onClose}
           />
           <motion.div
-            className="relative bg-white dark:bg-[#111] rounded-t-2xl w-full px-5 pb-10"
-            style={{ maxWidth: 390, marginLeft: 'auto', marginRight: 'auto' }}
+            className="relative bg-white dark:bg-[#111] rounded-t-2xl w-full"
+            style={{
+              maxWidth: 390, marginLeft: 'auto', marginRight: 'auto',
+              minHeight: '75dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            }}
             variants={sheetSlide}
             initial="initial"
             animate="animate"
             exit="exit"
           >
-            <div className="flex justify-center pt-3 mb-5">
-              <div className="w-9 h-1 bg-gray-200 dark:bg-[#333] rounded-full" />
+            <div style={{ width: 40, height: 5, borderRadius: 3, background: darkMode ? '#333' : '#e5e7eb', margin: '12px auto 4px', flexShrink: 0 }} />
+            <p className="text-[18px] font-black text-gray-900 dark:text-white px-5 mb-5">{title}</p>
+            <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '0 20px 48px' }}>
+              {children}
             </div>
-            <p className="text-[18px] font-black text-gray-900 dark:text-white mb-5">{title}</p>
-            {children}
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom, transparent, ${darkMode ? 'rgba(17,17,17,0.95)' : 'rgba(255,255,255,0.95)'})`, pointerEvents: 'none' }} />
           </motion.div>
         </div>
       )}

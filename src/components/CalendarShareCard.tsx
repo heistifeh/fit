@@ -546,162 +546,174 @@ export default function CalendarShareCard({ onClose, workouts, streak }: Calenda
           background: sheetBg,
           borderRadius: '20px 20px 0 0',
           maxHeight: '94dvh',
-          overflowY: 'auto',
+          minHeight: '85dvh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
         }}
       >
-        {/* Close row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 16px 4px' }}>
-          <p style={{ fontSize: 16, fontWeight: 900, color: darkMode ? '#fff' : '#111', margin: 0 }}>Share streak</p>
-          <button
-            onClick={onClose}
-            style={{
-              width: 32, height: 32, borderRadius: 10,
-              background: darkMode ? '#1a1a1a' : '#f3f4f6',
-              border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            }}
-          >
-            <X size={16} color="#6b7280" />
-          </button>
-        </div>
+        {/* Drag handle */}
+        <div style={{ width: 40, height: 5, borderRadius: 3, background: '#333', margin: '12px auto 4px', flexShrink: 0 }} />
 
-        {/* Card preview */}
-        <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'center' }}>
-          <CalendarCard
-            cardRef={cardRef}
-            cardBgStyle={cardBgStyle}
-            avatarUrl={avatarUrl}
-            displayName={displayName}
-            handle={displayHandle}
-            workouts={workouts}
-            streak={streak}
-          />
-        </div>
-
-        {/* Handle nudge */}
-        {!displayHandle && (
-          <div style={{ padding: '0 16px 12px', display: 'flex', justifyContent: 'center' }}>
-            <motion.button
-              onClick={() => { setHandleInput(''); setShowHandlePrompt(true); }}
-              whileTap={press.whileTap}
+        {/* Scrollable content */}
+        <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          {/* Close row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 4px' }}>
+            <p style={{ fontSize: 16, fontWeight: 900, color: darkMode ? '#fff' : '#111', margin: 0 }}>Share streak</p>
+            <button
+              onClick={onClose}
               style={{
-                width: '100%', maxWidth: 400,
-                display: 'flex', alignItems: 'center', gap: 12,
-                background: '#141414', borderRadius: 14, border: '1px solid #2a2a2a',
-                padding: '10px 14px', cursor: 'pointer', textAlign: 'left',
+                width: 32, height: 32, borderRadius: 10,
+                background: darkMode ? '#1a1a1a' : '#f3f4f6',
+                border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
               }}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.3 }}>Add your X handle</p>
-                <p style={{ fontSize: 12, color: '#6b7280', margin: 0, lineHeight: 1.3 }}>Shows on your shared cards</p>
-              </div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2">
-                <polyline points="9,18 15,12 9,6"/>
-              </svg>
+              <X size={16} color="#6b7280" />
+            </button>
+          </div>
+
+          {/* Card preview */}
+          <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'center' }}>
+            <CalendarCard
+              cardRef={cardRef}
+              cardBgStyle={cardBgStyle}
+              avatarUrl={avatarUrl}
+              displayName={displayName}
+              handle={displayHandle}
+              workouts={workouts}
+              streak={streak}
+            />
+          </div>
+
+          {/* Handle nudge */}
+          {!displayHandle && (
+            <div style={{ padding: '0 16px 12px', display: 'flex', justifyContent: 'center' }}>
+              <motion.button
+                onClick={() => { setHandleInput(''); setShowHandlePrompt(true); }}
+                whileTap={press.whileTap}
+                style={{
+                  width: '100%', maxWidth: 400,
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  background: '#141414', borderRadius: 14, border: '1px solid #2a2a2a',
+                  padding: '10px 14px', cursor: 'pointer', textAlign: 'left',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.3 }}>Add your X handle</p>
+                  <p style={{ fontSize: 12, color: '#6b7280', margin: 0, lineHeight: 1.3 }}>Shows on your shared cards</p>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2">
+                  <polyline points="9,18 15,12 9,6"/>
+                </svg>
+              </motion.button>
+            </div>
+          )}
+
+          {/* Background picker */}
+          <div style={{ padding: '4px 16px 16px' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+              Background
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <BgOption selected={bgType === 'dark'} onClick={() => setBgType('dark')} style={{ backgroundColor: '#080808' }} />
+              <BgOption selected={bgType === 'gradient'} onClick={() => setBgType('gradient')} style={{ background: 'linear-gradient(160deg, #0a0a0a 60%, #0d9e6e 100%)' }} />
+              <BgOption selected={bgType === 'teal-dark'} onClick={() => setBgType('teal-dark')} style={{ backgroundColor: '#042f23' }} />
+              <BgOption
+                selected={bgType === 'photo'}
+                onClick={handlePhotoTileClick}
+                style={bgPhotoUrl ? {
+                  backgroundImage: `url(${bgPhotoUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                } : { backgroundColor: '#1a1a1a' }}
+              >
+                {!bgPhotoUrl && <Camera size={20} color="#555" />}
+                {bgPhotoUrl && (
+                  <button
+                    onClick={removePhoto}
+                    style={{
+                      position: 'absolute', top: 2, right: 2,
+                      width: 18, height: 18, borderRadius: '50%',
+                      background: 'rgba(0,0,0,0.7)', border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <X size={9} color="white" />
+                  </button>
+                )}
+              </BgOption>
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+          </div>
+
+          {/* Action buttons */}
+          <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <motion.button
+              onClick={handleShareX}
+              disabled={isGenerating}
+              whileTap={press.whileTap}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                padding: '16px 0', borderRadius: 14, border: '1px solid #333',
+                background: '#000', color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer',
+                opacity: isGenerating ? 0.7 : 1,
+              }}
+            >
+              {isGenerating ? (
+                <><span className="cal-spinner" />Saving card...</>
+              ) : (
+                <><XLogo size={17} />Share on X</>
+              )}
+            </motion.button>
+
+            <motion.button
+              onClick={handleSave}
+              disabled={isSaving || isGenerating}
+              whileTap={press.whileTap}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                padding: '16px 0', borderRadius: 14, border: `1px solid ${borderColor}`,
+                background: darkMode ? '#111' : '#fff', color: '#888', fontWeight: 600, fontSize: 15, cursor: 'pointer',
+                opacity: (isSaving || isGenerating) ? 0.5 : 1,
+              }}
+            >
+              <Download size={16} />
+              {isSaving ? 'Saving…' : 'Save as image'}
             </motion.button>
           </div>
-        )}
 
-        {/* Background picker */}
-        <div style={{ padding: '4px 16px 16px' }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-            Background
-          </p>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <BgOption selected={bgType === 'dark'} onClick={() => setBgType('dark')} style={{ backgroundColor: '#080808' }} />
-            <BgOption selected={bgType === 'gradient'} onClick={() => setBgType('gradient')} style={{ background: 'linear-gradient(160deg, #0a0a0a 60%, #0d9e6e 100%)' }} />
-            <BgOption selected={bgType === 'teal-dark'} onClick={() => setBgType('teal-dark')} style={{ backgroundColor: '#042f23' }} />
-            <BgOption
-              selected={bgType === 'photo'}
-              onClick={handlePhotoTileClick}
-              style={bgPhotoUrl ? {
-                backgroundImage: `url(${bgPhotoUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              } : { backgroundColor: '#1a1a1a' }}
-            >
-              {!bgPhotoUrl && <Camera size={20} color="#555" />}
-              {bgPhotoUrl && (
-                <button
-                  onClick={removePhoto}
-                  style={{
-                    position: 'absolute', top: 2, right: 2,
-                    width: 18, height: 18, borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.7)', border: 'none', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  <X size={9} color="white" />
-                </button>
-              )}
-            </BgOption>
-          </div>
-          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-        </div>
-
-        {/* Action buttons */}
-        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <motion.button
-            onClick={handleShareX}
-            disabled={isGenerating}
-            whileTap={press.whileTap}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-              padding: '16px 0', borderRadius: 14, border: '1px solid #333',
-              background: '#000', color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer',
-              opacity: isGenerating ? 0.7 : 1,
-            }}
-          >
-            {isGenerating ? (
-              <><span className="cal-spinner" />Saving card...</>
-            ) : (
-              <><XLogo size={17} />Share on X</>
-            )}
-          </motion.button>
-
-          <motion.button
-            onClick={handleSave}
-            disabled={isSaving || isGenerating}
-            whileTap={press.whileTap}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-              padding: '16px 0', borderRadius: 14, border: `1px solid ${borderColor}`,
-              background: darkMode ? '#111' : '#fff', color: '#888', fontWeight: 600, fontSize: 15, cursor: 'pointer',
-              opacity: (isSaving || isGenerating) ? 0.5 : 1,
-            }}
-          >
-            <Download size={16} />
-            {isSaving ? 'Saving…' : 'Save as image'}
-          </motion.button>
-        </div>
-
-        {/* Caption preview */}
-        <div style={{ padding: '16px 16px 40px' }}>
-          <div style={{
-            background: darkMode ? '#111' : '#fff',
-            border: `1px solid ${borderColor}`,
-            borderRadius: 14, padding: 16,
-          }}>
-            <p style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>
-              Caption preview
-            </p>
-            <pre style={{ fontSize: 13, color: darkMode ? '#aaa' : '#374151', fontWeight: 500, whiteSpace: 'pre-wrap', lineHeight: 1.6, margin: 0, fontFamily: 'inherit' }}>
-              {buildCaption().split('\n').map((line, i) => (
-                <span key={i}>
-                  {line.startsWith('#')
-                    ? <span style={{ color: '#10B981', fontWeight: 600 }}>{line}</span>
-                    : line
-                  }
-                  {i < buildCaption().split('\n').length - 1 ? '\n' : ''}
-                </span>
-              ))}
-            </pre>
+          {/* Caption preview */}
+          <div style={{ padding: '16px 16px 56px' }}>
+            <div style={{
+              background: darkMode ? '#111' : '#fff',
+              border: `1px solid ${borderColor}`,
+              borderRadius: 14, padding: 16,
+            }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px' }}>
+                Caption preview
+              </p>
+              <pre style={{ fontSize: 13, color: darkMode ? '#aaa' : '#374151', fontWeight: 500, whiteSpace: 'pre-wrap', lineHeight: 1.6, margin: 0, fontFamily: 'inherit' }}>
+                {buildCaption().split('\n').map((line, i) => (
+                  <span key={i}>
+                    {line.startsWith('#')
+                      ? <span style={{ color: '#10B981', fontWeight: 600 }}>{line}</span>
+                      : line
+                    }
+                    {i < buildCaption().split('\n').length - 1 ? '\n' : ''}
+                  </span>
+                ))}
+              </pre>
+            </div>
           </div>
         </div>
+
+        {/* Scroll gradient */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom, transparent, ${darkMode ? 'rgba(10,10,10,0.95)' : 'rgba(248,249,250,0.95)'})`, pointerEvents: 'none' }} />
 
         {/* ── Handle prompt sheet ──────────────────────────────────────── */}
         <AnimatePresence>
