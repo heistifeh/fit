@@ -125,19 +125,35 @@ export const useAuth = (prefs: SyncPrefs) => {
     });
     if (error) throw error;
     if (data.user) {
-      const quizAnswers = JSON.parse(localStorage.getItem('fitnex_quiz_answers') ?? '{}');
+      const raw = localStorage.getItem('fitnex_quiz_answers');
+      console.log('[Fitnex] Quiz answers at signup:', raw);
+      const quizAnswers = JSON.parse(raw ?? '{}');
+      console.log('[Fitnex] Parsed quiz answers:', quizAnswers);
+
       const weeklyGoalMap: Record<string, number> = {
         beginner: 2, casual: 3, dedicated: 5, daily: 6,
       };
-      await supabase.from('profiles').update({
-        name,
-        quiz_goal:       quizAnswers.goal       ?? null,
-        quiz_frequency:  quizAnswers.frequency  ?? null,
-        quiz_equipment:  quizAnswers.equipment  ?? null,
-        quiz_experience: quizAnswers.experience ?? null,
-        quiz_challenge:  quizAnswers.challenge  ?? null,
-        weekly_goal:     weeklyGoalMap[quizAnswers.frequency] ?? 5,
-      }).eq('id', data.user.id);
+      const hasQuizAnswers = Object.keys(quizAnswers).length > 0;
+
+      // Always upsert name; include quiz fields only when answers exist.
+      // upsert (not update) handles the race where the profile trigger hasn't run yet.
+      const payload: Record<string, unknown> = { id: data.user.id, name };
+      if (hasQuizAnswers) {
+        payload.quiz_goal       = quizAnswers.goal       ?? null;
+        payload.quiz_frequency  = quizAnswers.frequency  ?? null;
+        payload.quiz_equipment  = quizAnswers.equipment  ?? null;
+        payload.quiz_experience = quizAnswers.experience ?? null;
+        payload.quiz_challenge  = quizAnswers.challenge  ?? null;
+        payload.weekly_goal     = weeklyGoalMap[quizAnswers.frequency] ?? 5;
+      }
+
+      const { error: upsertError } = await supabase
+        .from('profiles')
+        .upsert(payload, { onConflict: 'id' });
+
+      if (upsertError) console.error('[Fitnex] Profile upsert error:', upsertError);
+      else console.log('[Fitnex] Profile upserted successfully, quiz saved:', hasQuizAnswers);
+
       localStorage.removeItem('fitnex_quiz_answers');
     }
   };

@@ -216,12 +216,10 @@ const OnboardingQuiz = () => {
   const handleSelect = (stepId: string, optionId: string) => {
     const updated = { ...answers, [stepId]: optionId };
     setAnswers(updated);
+    localStorage.setItem('fitnex_quiz_answers', JSON.stringify(updated));
     const s = QUIZ_STEPS.find((q) => q.id === stepId);
     if (s && 'autoAdvance' in s && s.autoAdvance) {
-      setTimeout(() => {
-        localStorage.setItem('fitnex_quiz_answers', JSON.stringify(updated));
-        setShowResult(true);
-      }, 400);
+      setTimeout(() => setShowResult(true), 400);
     }
   };
 
@@ -229,7 +227,6 @@ const OnboardingQuiz = () => {
     if (currentStep < QUIZ_STEPS.length - 1) {
       setCurrentStep((prev) => prev + 1);
     } else {
-      localStorage.setItem('fitnex_quiz_answers', JSON.stringify(answers));
       setShowResult(true);
     }
   };
