@@ -7,10 +7,12 @@ import { usePreferences } from '@/context/PreferencesContext';
 import { saveWorkout, updatePersonalRecords } from '@/lib/supabase';
 import { calculate1RM } from '@/services/setService';
 import {
-  Clock, Dumbbell, CheckSquare, Share2, Check, Save,
+  Clock, Dumbbell, CheckSquare, Share2, Check, Save, Trophy,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import WorkoutShareCard from '@/components/general/WorkoutShareCard';
+import ExerciseIcon from '@/components/ExerciseIcon';
+import { getMuscleFromName } from '@/utils/exerciseIcon';
 import {
   screenEnter, staggerContainer, staggerChild, prBurst, countUp, press,
 } from '@/animations/fitnex.variants';
@@ -279,7 +281,7 @@ export default function WorkoutSummary() {
               className="rounded-2xl border border-amber-200 dark:border-amber-900/50 px-4 py-3.5 flex items-center gap-3"
               style={{ background: darkMode ? '#2a1a00' : 'linear-gradient(135deg, #fef3c7, #fde68a)' }}
             >
-              <span className="text-2xl shrink-0">🏆</span>
+              <Trophy size={22} color="#92400e" fill="#92400e" className="shrink-0" />
               <div className="min-w-0">
                 <p className="font-black text-amber-800 text-[15px] leading-snug">
                   New Personal Record!
@@ -310,9 +312,7 @@ export default function WorkoutSummary() {
               >
                 {/* Card header */}
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-[#f8f9fa] dark:border-[#1a1a1a]">
-                  <div className="w-9 h-9 rounded-xl bg-tint-muted flex items-center justify-center text-base shrink-0">
-                    {exercise.emoji}
-                  </div>
+                  <ExerciseIcon muscleGroup={getMuscleFromName(exercise.name)} size={36} darkMode={darkMode} />
                   <p className="font-bold text-[15px] flex-1 leading-snug dark:text-white">{exercise.name}</p>
                   <p className="text-tint font-bold text-sm shrink-0">
                     {volumePerExercise(exercise).toLocaleString()} kg

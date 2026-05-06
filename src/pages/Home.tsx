@@ -19,6 +19,8 @@ import { useAuthContext } from '@/context/AuthContext';
 import { supabase, getWorkouts, type WorkoutWithExercisesAndSets } from '@/lib/supabase';
 import OnboardingWalkthrough from '@/components/OnboardingWalkthrough';
 import CalendarShareCard from '@/components/CalendarShareCard';
+import ExerciseIcon from '@/components/ExerciseIcon';
+import { getMuscleFromName } from '@/utils/exerciseIcon';
 
 // ─── Helpers (local / guest store workouts) ──────────────────────────────────
 
@@ -27,12 +29,12 @@ const fmtKgCompact = (kg: number, unit: 'kg' | 'lbs') => {
   return v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(Math.round(v));
 };
 
-const getWorkoutEmoji = (names: string) => {
-  const n = names.toLowerCase();
-  if (n.includes('bench') || n.includes('chest') || n.includes('fly')) return '🏋️';
-  if (n.includes('dead') || n.includes('row') || n.includes('back'))   return '💀';
-  if (n.includes('squat') || n.includes('leg') || n.includes('lunge')) return '🦵';
-  return '💪';
+const getGreeting = (): string => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return 'Good morning';
+  if (hour >= 12 && hour < 17) return 'Good afternoon';
+  if (hour >= 17 && hour < 21) return 'Good evening';
+  return 'Good night';
 };
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -41,12 +43,10 @@ const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 const getDbWorkoutLabel = (workout: WorkoutWithExercisesAndSets) => {
   const exs = workout.exercises;
-  if (!exs.length) return { name: 'Empty session', emoji: '💪' };
-  const names = exs.map((e) => e.name).join(' ');
-  const emoji = getWorkoutEmoji(names);
-  if (exs.length === 1) return { name: exs[0].name, emoji };
-  if (exs.length === 2) return { name: `${exs[0].name} & ${exs[1].name}`, emoji };
-  return { name: `${exs[0].name} +${exs.length - 1} more`, emoji };
+  if (!exs.length) return { name: 'Empty session' };
+  if (exs.length === 1) return { name: exs[0].name };
+  if (exs.length === 2) return { name: `${exs[0].name} & ${exs[1].name}` };
+  return { name: `${exs[0].name} +${exs.length - 1} more` };
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -188,11 +188,9 @@ export default function Home() {
           style={{ maxWidth: isDesktop ? 1200 : '100%', margin: '0 auto' }}
         >
         <div>
-          {mode !== 'guest' && (
-            <p className="text-sm text-gray-400 leading-none mb-1">Welcome back,</p>
-          )}
+          <p className="text-sm text-gray-400 leading-none mb-1">{getGreeting()},</p>
           <h1 className="text-[28px] font-black leading-tight tracking-tight dark:text-white">
-            {mode === 'guest' ? 'Welcome to Fitnex 👋' : `${firstName ?? 'there'} 👋`}
+            {mode === 'guest' ? 'Welcome to Fitnex' : (firstName ?? 'there')}
           </h1>
         </div>
         <motion.button
@@ -247,7 +245,7 @@ export default function Home() {
           >
             <span className="text-[28px] font-black leading-none text-gray-900 dark:text-white tabular-nums">
               {fmtKgCompact(totalVolume, weightUnit)}
-              <span className="text-base font-bold">{weightUnit}</span>
+              <span className="text-base font-bold"> {weightUnit}</span>
             </span>
             <span className="text-[11px] text-gray-400 font-medium">lifted</span>
           </motion.div>
@@ -256,10 +254,10 @@ export default function Home() {
             variants={staggerChild}
             className="bg-white dark:bg-[#111] rounded-2xl p-4 border border-[#f0f0f0] dark:border-[#1a1a1a] flex flex-col items-center gap-0.5"
           >
-            <span className="text-[28px] font-black leading-none text-gray-900 dark:text-white tabular-nums flex items-center gap-1">
-              {streak}
-              {streak >= 2 && <Flame size={18} className="text-orange-400 mb-0.5" />}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
+              <Flame size={18} color="#f97316" fill="#f97316" />
+              <span className="text-[22px] font-black leading-none text-gray-900 dark:text-white tabular-nums">{streak}</span>
+            </div>
             <span className="text-[11px] text-gray-400 font-medium">streak</span>
           </motion.div>
         </div>
@@ -427,16 +425,15 @@ export default function Home() {
                 {recent.map((workout) => {
                   const vol      = Number(workout.total_volume_kg) || 0;
                   const progress = (vol / maxVol) * 100;
-                  const { name, emoji } = getDbWorkoutLabel(workout);
+                  const { name } = getDbWorkoutLabel(workout);
                   const exCount  = workout.exercises.length;
+                  const firstEx  = workout.exercises[0]?.name ?? '';
 
                   return (
                     <motion.div key={workout.id} variants={staggerChild} whileTap={press.whileTap}>
                       <Link to={`/workout/${workout.id}`} className="block">
                         <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-3.5 flex items-center gap-3 active:opacity-70 transition-opacity">
-                          <div className="w-11 h-11 rounded-xl bg-tint-muted flex items-center justify-center text-xl shrink-0">
-                            {emoji}
-                          </div>
+                          <ExerciseIcon muscleGroup={getMuscleFromName(firstEx)} size={44} darkMode={darkMode} />
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-[14px] leading-snug truncate dark:text-white">{name}</p>
                             <p className="text-[12px] text-gray-400 mt-0.5">
@@ -470,8 +467,7 @@ export default function Home() {
                 {recent.map((workout) => {
                   const vol      = getWorkoutTotalWeight(workout);
                   const progress = (vol / maxVol) * 100;
-                  const names    = workout.exercises.map((e) => e.name).join(' ');
-                  const emoji    = getWorkoutEmoji(names);
+                  const firstEx  = workout.exercises[0]?.name ?? '';
                   const name     = workout.exercises.length === 0 ? 'Empty session'
                     : workout.exercises.length === 1 ? workout.exercises[0].name
                     : workout.exercises.length === 2 ? `${workout.exercises[0].name} & ${workout.exercises[1].name}`
@@ -482,9 +478,7 @@ export default function Home() {
                     <motion.div key={workout.id} variants={staggerChild} whileTap={press.whileTap}>
                       <Link to={`/workout/${workout.id}`} className="block">
                         <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-3.5 flex items-center gap-3 active:opacity-70 transition-opacity">
-                          <div className="w-11 h-11 rounded-xl bg-tint-muted flex items-center justify-center text-xl shrink-0">
-                            {emoji}
-                          </div>
+                          <ExerciseIcon muscleGroup={getMuscleFromName(firstEx)} size={44} darkMode={darkMode} />
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-[14px] leading-snug truncate dark:text-white">{name}</p>
                             <p className="text-[12px] text-gray-400 mt-0.5">
@@ -549,7 +543,18 @@ export default function Home() {
               <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '0 20px 40px' }}>
                 <p className="text-[18px] font-black text-gray-900 dark:text-white mb-5">Notifications</p>
                 <div className="flex flex-col items-center gap-3 py-8">
-                  <span className="text-4xl">🔔</span>
+                  <div style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 20,
+                    background: darkMode ? '#1a1a1a' : '#f3f4f6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 16,
+                  }}>
+                    <Bell size={28} color={darkMode ? '#444' : '#9ca3af'} />
+                  </div>
                   <p className="font-bold text-[15px] text-gray-800 dark:text-white">No notifications yet</p>
                   <p className="text-[13px] text-gray-400 text-center leading-relaxed max-w-[240px]">
                     We'll notify you about streaks, PRs and weekly summaries.

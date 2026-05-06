@@ -10,18 +10,6 @@ import WorkoutDetailScreen, {
   type DetailSet,
 } from './WorkoutDetailScreen';
 
-// ─── Emoji helper ─────────────────────────────────────────────────────────────
-
-const getEmoji = (name: string) => {
-  const n = name.toLowerCase();
-  if (n.includes('bench') || n.includes('chest') || n.includes('fly'))          return '🏋️';
-  if (n.includes('squat') || n.includes('leg')   || n.includes('lunge'))         return '🦵';
-  if (n.includes('dead')  || n.includes('row')   || n.includes('pull'))          return '💪';
-  if (n.includes('shoulder') || n.includes('lateral') || n.includes('overhead')) return '🔥';
-  if (n.includes('curl') || n.includes('tricep') || n.includes('bicep'))         return '💪';
-  return '🏋️';
-};
-
 // ─── Adapter: Supabase workout → WorkoutDetail ────────────────────────────────
 
 function dbWorkoutToDetail(w: WorkoutWithExercisesAndSets): WorkoutDetail {
@@ -45,7 +33,7 @@ function dbWorkoutToDetail(w: WorkoutWithExercisesAndSets): WorkoutDetail {
     const total_volume = sets
       .filter((s) => s.is_completed)
       .reduce((a, s) => a + s.weight_kg * s.reps, 0);
-    return { id: ex.id, name: ex.name, emoji: ex.emoji || getEmoji(ex.name), total_volume, sets };
+    return { id: ex.id, name: ex.name, emoji: ex.emoji || '', total_volume, sets };
   });
 
   return {
@@ -101,7 +89,7 @@ function storeWorkoutToDetail(
       return { set_number: i + 1, weight_kg, reps, is_completed: true, is_pr: isPR };
     });
     const total_volume = sets.reduce((a, s) => a + s.weight_kg * s.reps, 0);
-    return { id: `${workout.id}-${exIdx}`, name: ex.name, emoji: getEmoji(ex.name), total_volume, sets };
+    return { id: `${workout.id}-${exIdx}`, name: ex.name, emoji: '', total_volume, sets };
   });
 
   const durationSecs = finishedAt ? finishedAt.diff(createdAt, 'second') : 0;

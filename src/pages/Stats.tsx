@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dumbbell, Calendar, Clock } from 'lucide-react';
+import { Dumbbell, Calendar, Clock, Flame } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,6 +13,8 @@ import {
   screenEnter, staggerContainer, staggerChild, SPRING,
 } from '@/animations/fitnex.variants';
 import { usePreferences } from '@/context/PreferencesContext';
+import ExerciseIcon from '@/components/ExerciseIcon';
+import { getMuscleFromName } from '@/utils/exerciseIcon';
 import { formatWeight } from '@/utils/weight';
 import { calculateStreak } from '@/utils/streak';
 import { useAuthContext } from '@/context/AuthContext';
@@ -85,7 +87,7 @@ export default function Stats() {
   usePageTitle('Stats');
   const { mode, user } = useAuthContext();
   const storeWorkouts = useStore((s) => s.workouts);
-  const { weightUnit } = usePreferences();
+  const { weightUnit, darkMode } = usePreferences();
   const isTablet  = useMediaQuery('(min-width: 640px)');
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
@@ -161,9 +163,24 @@ export default function Stats() {
     ? `${sessions >= lastSessions ? '+' : ''}${sessions - lastSessions}`
     : null;
 
-  const avgDurationMins = sessions > 0
-    ? Math.round(periodWorkouts.reduce((a, w) => a + w.durationSecs, 0) / sessions / 60)
-    : 0;
+  const formatVolume = (kg: number): string => {
+    if (kg >= 1000000) return `${(kg / 1000000).toFixed(1)}M kg`;
+    if (kg >= 1000) return `${(kg / 1000).toFixed(1)}k kg`;
+    return `${kg} kg`;
+  };
+
+  const avgDurationSecs = (() => {
+    const withDuration = periodWorkouts.filter((w) => w.durationSecs > 60);
+    if (withDuration.length === 0) return null;
+    return Math.round(withDuration.reduce((a, w) => a + w.durationSecs, 0) / withDuration.length);
+  })();
+
+  const formatDuration = (secs: number): string => {
+    const m = Math.floor(secs / 60);
+    const h = Math.floor(m / 60);
+    if (h > 0) return `${h}h ${m % 60}m`;
+    return `${m}m`;
+  };
 
   const streak = calculateStreak(allSimple.map((w) => w.isoDate));
 
@@ -280,7 +297,7 @@ export default function Stats() {
                   <TrendBadge value={volumeTrend} />
                 </div>
                 <p className="text-[24px] font-black leading-none tabular-nums dark:text-white">
-                  {totalVolume > 0 ? formatWeight(totalVolume, weightUnit) : '—'}
+                  {totalVolume > 0 ? formatVolume(totalVolume) : '—'}
                 </p>
                 <p className="text-[12px] text-gray-400 font-medium mt-1">Total volume</p>
               </motion.div>
@@ -307,8 +324,8 @@ export default function Stats() {
                   </div>
                 </div>
                 <p className="text-[24px] font-black leading-none tabular-nums dark:text-white">
-                  {avgDurationMins > 0 ? (
-                    <>{avgDurationMins}<span className="text-[14px] font-bold text-gray-400 ml-0.5">m avg</span></>
+                  {avgDurationSecs ? (
+                    <>{formatDuration(avgDurationSecs)}<span className="text-[14px] font-bold text-gray-400 ml-0.5"> avg</span></>
                   ) : '—'}
                 </p>
                 <p className="text-[12px] text-gray-400 font-medium mt-1">Avg duration</p>
@@ -317,12 +334,20 @@ export default function Stats() {
               {/* Streak */}
               <motion.div variants={staggerChild} className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] p-4">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center text-lg leading-none">
-                    🔥
+                  <div style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 10,
+                    background: darkMode ? '#2d1a0a' : '#fff7ed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <Flame size={16} color="#f97316" fill="#f97316" />
                   </div>
                   {streak >= 3 && (
                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-500">
-                      🔥 on fire
+                      on fire
                     </span>
                   )}
                 </div>
@@ -426,9 +451,7 @@ export default function Stats() {
                         variants={staggerChild}
                         className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-3.5 flex items-center gap-3"
                       >
-                        <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center text-xl shrink-0">
-                          🏆
-                        </div>
+                        <ExerciseIcon muscleGroup={getMuscleFromName(pr.exercise_name)} size={44} borderRadius={12} darkMode={darkMode} />
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-[14px] leading-snug dark:text-white">
                             {pr.exercise_name}
@@ -455,9 +478,7 @@ export default function Stats() {
                         variants={staggerChild}
                         className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-3.5 flex items-center gap-3"
                       >
-                        <div className="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center text-xl shrink-0">
-                          🏆
-                        </div>
+                        <ExerciseIcon muscleGroup={getMuscleFromName(pr.exercise)} size={44} borderRadius={12} darkMode={darkMode} />
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-[14px] leading-snug dark:text-white">
                             {pr.exercise}

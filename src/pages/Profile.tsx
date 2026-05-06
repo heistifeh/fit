@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   Target, Dumbbell, Clock, Coffee, Bell, User,
-  Code2, Power, ChevronRight, Lock,
+  Code2, Power, ChevronRight, Lock, Flame,
 } from 'lucide-react';
 import dayjs from 'dayjs';
 import {
@@ -327,16 +327,19 @@ export default function Profile() {
     ? calculateStreak(dbWorkouts.map((w) => w.started_at))
     : calculateStreak(storeWorkouts.map((w) => w.createdAt.toISOString()));
 
-  // Check if any workout was started before 7am
-  const hasEarlyWorkout = mode === 'authenticated'
-    ? dbWorkouts.some((w) => new Date(w.started_at).getHours() < 7)
-    : storeWorkouts.some((w) => w.createdAt.getHours() < 7);
+  const firstWorkoutHour = (() => {
+    const earlyHours = mode === 'authenticated'
+      ? dbWorkouts.map((w) => new Date(w.started_at).getHours())
+      : storeWorkouts.map((w) => w.createdAt.getHours());
+    const early = earlyHours.find((h) => h < 7);
+    return early;
+  })();
 
   const badges = getBadges({
     workoutCount: workoutCount,
     streak:       streak,
     hasPR:        mode === 'authenticated' ? dbPRs.length > 0 : false,
-    hasEarlyWorkout,
+    firstWorkoutHour,
   });
 
   const {
@@ -612,7 +615,7 @@ export default function Profile() {
                 <div className="w-px h-8 bg-gray-100 dark:bg-[#1a1a1a]" />
                 <div className="flex-1 flex flex-col items-center gap-0.5">
                   <span className="text-[20px] font-black tabular-nums leading-tight flex items-center gap-1 dark:text-white">
-                    🔥 {streak}
+                    <Flame size={16} color="#f97316" fill="#f97316" /> {streak}
                   </span>
                   <span className="text-[11px] text-gray-400 font-medium">Streak</span>
                 </div>
@@ -675,18 +678,40 @@ export default function Profile() {
                     <motion.div
                       key={badge.id}
                       variants={staggerChild}
-                      className="shrink-0 w-20 bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] py-3 flex flex-col items-center gap-1.5"
                       style={{
                         opacity: badge.earned ? 1 : 0.35,
-                        filter:  badge.earned ? 'none' : 'grayscale(1)',
+                        filter: badge.earned ? 'none' : 'grayscale(1)',
+                        background: darkMode ? '#111' : '#fff',
+                        border: `1px solid ${darkMode ? '#1a1a1a' : '#f0f0f0'}`,
+                        borderRadius: 14,
+                        padding: '14px 10px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 8,
+                        width: 80,
+                        flexShrink: 0,
                       }}
-                      title={badge.earned ? badge.description : `🔒 ${badge.description}`}
+                      title={badge.earned ? badge.description : `Locked: ${badge.description}`}
                     >
-                      <span className="text-2xl leading-none">{badge.emoji}</span>
-                      <span
-                        className="text-[10px] font-medium text-center leading-snug px-1"
-                        style={{ color: badge.earned ? '#6b7280' : '#9ca3af' }}
-                      >
+                      <div style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        background: darkMode ? badge.iconBgDark : badge.iconBg,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        <badge.icon size={20} color={badge.iconColor} strokeWidth={2} />
+                      </div>
+                      <span style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: darkMode ? '#555' : '#6b7280',
+                        textAlign: 'center',
+                        lineHeight: 1.3,
+                      }}>
                         {badge.name}
                       </span>
                     </motion.div>

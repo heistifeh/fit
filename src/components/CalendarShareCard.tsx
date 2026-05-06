@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { X, Download, Camera } from 'lucide-react';
+import { X, Download, Camera, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getDaysInMonth, startOfMonth, getDay, format } from 'date-fns';
 import html2canvas from 'html2canvas';
@@ -160,8 +160,8 @@ function CalendarCard({
   const weeklyRankPct = getPercentile(weeklyVolume);
 
   const formatVolume = (kg: number) => {
-    if (kg >= 1000) return `${(kg / 1000).toFixed(1)}k`;
-    return String(Math.round(kg));
+    if (kg >= 1000) return `${(kg / 1000).toFixed(1)}k kg`;
+    return `${Math.round(kg)} kg`;
   };
 
   const byLine = handle && handle.trim()
@@ -227,7 +227,7 @@ function CalendarCard({
 
       {/* ── Streak hero ─────────────────────────────────────────────────── */}
       <div style={{ padding: '16px 24px 0', display: 'flex', alignItems: 'baseline', gap: 8 }}>
-        <span style={{ fontSize: 28, lineHeight: 1 }}>🔥</span>
+        <Flame size={32} color="#f97316" fill="#f97316" style={{ alignSelf: 'center' }} />
         <span style={{ color: '#fff', fontSize: 52, fontWeight: 900, letterSpacing: '-2px', lineHeight: 1 }}>
           {streak}
         </span>
@@ -265,8 +265,8 @@ function CalendarCard({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: hasWorkout || isToday ? '#10B981' : '#111',
-                  opacity: isFuture && !hasWorkout ? 0.3 : 1,
+                  background: hasWorkout || isToday ? '#10B981' : isFuture ? 'transparent' : '#1a1a1a',
+                  opacity: isFuture && !hasWorkout ? 0.2 : hasWorkout || isToday ? 1 : 0.7,
                   boxShadow: isToday ? '0 0 0 2px #080808, 0 0 0 3.5px #10B981' : 'none',
                   position: 'relative',
                 }}
@@ -274,7 +274,7 @@ function CalendarCard({
                 <span style={{
                   fontSize: 9,
                   fontWeight: 700,
-                  color: hasWorkout || isToday ? '#fff' : '#ffffff55',
+                  color: hasWorkout || isToday ? '#fff' : '#ffffff88',
                   lineHeight: 1,
                 }}>
                   {day}
@@ -289,7 +289,7 @@ function CalendarCard({
       <div style={{ borderTop: '1px solid #111', display: 'flex' }}>
         {[
           { value: String(totalSessions),        label: 'Sessions'   },
-          { value: `${formatVolume(totalVolume)}kg`, label: 'Total lifted' },
+          { value: formatVolume(totalVolume), label: 'Total lifted' },
           { value: `Top ${weeklyRankPct}%`,       label: 'This week'  },
         ].map((stat, i, arr) => (
           <div
@@ -400,12 +400,14 @@ export default function CalendarShareCard({ onClose, workouts, streak }: Calenda
   const weeklyRankPct = getPercentile(weeklyVolume);
 
   const buildCaption = () => [
-    `${streak} day streak and counting 🔥`,
-    `${workoutDaysCount} workout${workoutDaysCount !== 1 ? 's' : ''} this month on fitnex`,
-    `top ${weeklyRankPct}% volume this week 📈`,
+    `not missing days 📅`,
+    `${streak} day streak on fitnex`,
+    `${workoutDaysCount} sessions this month · top ${weeklyRankPct}% volume this week`,
+    `the app shows your rank so you actually know if you're built different`,
     ``,
-    `#Fitnex #GymLife #Consistency`,
-  ].join('\n');
+    `fitnexonline.com`,
+    `#Fitnex #GymLife`,
+  ].filter(Boolean).join('\n');
 
   const handleShareX = async () => {
     if (isGenerating) return;

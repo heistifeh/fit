@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  ChevronLeft, Share2, Clock, Dumbbell, CheckSquare,
+  ChevronLeft, Share2, Clock, Dumbbell, CheckSquare, Trophy,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import WorkoutShareCard from '@/components/general/WorkoutShareCard';
@@ -11,6 +11,8 @@ import {
 import { usePreferences } from '@/context/PreferencesContext';
 import { formatWeight, fmtWeightNum } from '@/utils/weight';
 import { useAuthContext } from '@/context/AuthContext';
+import ExerciseIcon from '@/components/ExerciseIcon';
+import { getMuscleFromName } from '@/utils/exerciseIcon';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -74,9 +76,7 @@ function ExerciseCard({
     >
       {/* Card header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-[#f8f9fa] dark:border-[#1a1a1a]">
-        <div className="w-9 h-9 rounded-xl bg-tint-muted flex items-center justify-center text-base shrink-0">
-          {exercise.emoji}
-        </div>
+        <ExerciseIcon muscleGroup={getMuscleFromName(exercise.name)} size={36} darkMode={darkMode} />
         <p className="font-bold text-[15px] flex-1 leading-snug dark:text-white">{exercise.name}</p>
         <p className="text-tint font-bold text-[13px] tabular-nums shrink-0">
           {exercise.total_volume > 0 ? formatWeight(exercise.total_volume, weightUnit) : '—'}
@@ -272,7 +272,7 @@ export default function WorkoutDetailScreen({ workout, onBack }: Props) {
                 className="rounded-2xl border border-[#fcd34d] dark:border-amber-900/50 px-4 py-3.5 flex items-center gap-3"
                 style={{ background: darkMode ? '#2a1a00' : '#fef3c7' }}
               >
-                <span className="text-2xl shrink-0">🏆</span>
+                <Trophy size={22} color="#92400e" fill="#92400e" className="shrink-0" />
                 <div className="min-w-0">
                   <p className="font-black text-amber-800 text-[14px] leading-snug">
                     New Personal Record!

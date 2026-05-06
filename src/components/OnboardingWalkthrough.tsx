@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const slides = [
   {
     id: 'welcome',
-    title: 'Welcome to Fitnex 👋',
+    title: 'Welcome to Fitnex',
     desc: 'The workout tracker built for serious lifters. Log every set, beat every record, and share your gains.',
     cta: 'Get started',
     showSkip: true,

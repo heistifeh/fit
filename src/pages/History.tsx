@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Dumbbell, CheckSquare } from 'lucide-react';
+import { Clock, Dumbbell, CheckSquare, Flame, Trophy } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HistoryScreenSkeleton } from '@/components/Skeleton';
@@ -13,6 +13,8 @@ import WorkoutDetailScreen, {
 } from './WorkoutDetailScreen';
 import { usePreferences } from '@/context/PreferencesContext';
 import { formatWeight } from '@/utils/weight';
+import ExerciseIcon from '@/components/ExerciseIcon';
+import { getMuscleFromName } from '@/utils/exerciseIcon';
 import { useAuthContext } from '@/context/AuthContext';
 import useStore from '@/store';
 import { getWorkouts, type WorkoutWithExercisesAndSets } from '@/lib/supabase';
@@ -237,6 +239,7 @@ function WorkoutCard({
   onClick: () => void;
   weightUnit: 'kg' | 'lbs';
 }) {
+  const { darkMode } = usePreferences();
   const { detail } = entry;
   const shown = detail.exercises.slice(0, 2);
   const extra = detail.exercises.length - 2;
@@ -262,9 +265,17 @@ function WorkoutCard({
             <span className="text-[12px] font-semibold">{fmtDuration(detail.duration_secs)}</span>
           </div>
           {detail.hasPR && (
-            <span className="bg-amber-100 text-amber-700 text-[11px] font-black px-2 py-0.5 rounded-full flex items-center gap-0.5">
-              🏆 PR
-            </span>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              background: '#fef3c7',
+              borderRadius: 20,
+              padding: '3px 8px',
+            }}>
+              <Trophy size={11} color="#92400e" fill="#92400e" />
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#92400e' }}>PR</span>
+            </div>
           )}
         </div>
       </div>
@@ -294,9 +305,9 @@ function WorkoutCard({
         {shown.map((ex) => (
           <span
             key={ex.id}
-            className="flex items-center gap-1 bg-[#f0fdf4] text-tint text-[12px] font-semibold px-2.5 py-1 rounded-full"
+            className="flex items-center gap-1 bg-[#f0fdf4] dark:bg-[#1a1a1a] text-tint text-[12px] font-semibold px-2 py-1 rounded-full"
           >
-            <span>{ex.emoji}</span>
+            <ExerciseIcon muscleGroup={getMuscleFromName(ex.name)} size={18} borderRadius={5} darkMode={darkMode} />
             <span>{ex.name}</span>
           </span>
         ))}
@@ -390,6 +401,12 @@ export default function History() {
       groups.push({ label, entries: [entry], weekVol: entry.detail.total_volume_kg });
     }
   }
+
+  const formatVolume = (kg: number): string => {
+    if (kg >= 1000000) return `${(kg / 1000000).toFixed(1)}M kg`;
+    if (kg >= 1000) return `${(kg / 1000).toFixed(1)}k kg`;
+    return `${kg} kg`;
+  };
 
   // ── Monthly summary stats ─────────────────────────────────────────────────
   const monthLabel   = today.format('MMMM YYYY');
@@ -514,8 +531,8 @@ export default function History() {
               <span className="text-[11px] text-gray-400 font-medium">{weightUnit} lifted</span>
             </div>
             <div className="flex flex-col items-center gap-0.5">
-              <span className="text-[24px] font-black leading-none text-gray-900 dark:text-white tabular-nums flex items-center gap-0.5">
-                🔥{streak}
+              <span className="text-[24px] font-black leading-none text-gray-900 dark:text-white tabular-nums flex items-center gap-1">
+                <Flame size={18} color="#f97316" fill="#f97316" />{streak}
               </span>
               <span className="text-[11px] text-gray-400 font-medium">streak</span>
             </div>
@@ -550,7 +567,7 @@ export default function History() {
                 {group.label}
               </span>
               <span className="text-[12px] font-bold text-tint">
-                {formatWeight(group.weekVol, weightUnit)}
+                {formatVolume(group.weekVol)}
               </span>
             </div>
 

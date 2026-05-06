@@ -18,22 +18,13 @@ import { usePreferences } from '@/context/PreferencesContext';
 import { getWorkouts } from '@/lib/supabase';
 import { calculateStreak } from '@/utils/streak';
 import RestTimerPopup from '@/components/RestTimerPopup';
+import ExerciseIcon from '@/components/ExerciseIcon';
+import { getMuscleFromName } from '@/utils/exerciseIcon';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 const fmtTime = (s: number) =>
   `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-
-const getEmoji = (name: string) => {
-  const n = name.toLowerCase();
-  if (n.includes('bench') || n.includes('chest') || n.includes('fly'))         return '🏋️';
-  if (n.includes('squat') || n.includes('leg')   || n.includes('lunge'))        return '🦵';
-  if (n.includes('dead')  || n.includes('row')   || n.includes('pull'))         return '💪';
-  if (n.includes('shoulder') || n.includes('lateral') || n.includes('overhead')) return '🔥';
-  if (n.includes('curl') || n.includes('tricep') || n.includes('bicep'))        return '💪';
-  if (n.includes('plank') || n.includes('crunch') || n.includes('ab'))          return '⚡';
-  return '🏋️';
-};
 
 // ─── SetRow ─────────────────────────────────────────────────────────────────
 
@@ -204,9 +195,7 @@ function ExerciseCard({
 
       {/* Card header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 dark:border-[#1a1a1a]">
-        <div className="w-10 h-10 rounded-xl bg-tint-muted flex items-center justify-center text-lg shrink-0">
-          {getEmoji(exercise.name)}
-        </div>
+        <ExerciseIcon muscleGroup={getMuscleFromName(exercise.name)} size={40} darkMode={darkMode} />
         <p className="font-bold flex-1 text-[16px] leading-snug dark:text-white">{exercise.name}</p>
 
         {/* Menu */}
@@ -432,7 +421,7 @@ export default function CurrentWorkout() {
       return {
         id: ex.id,
         name: ex.name,
-        emoji: getEmoji(ex.name),
+        emoji: '',
         sets: ex.sets
           .filter((s) => completedSetIds.has(s.id))
           .map((s) => ({
@@ -584,9 +573,7 @@ export default function CurrentWorkout() {
                   className="w-full text-left flex items-center gap-3 py-3 border-b border-gray-50 dark:border-[#222] last:border-0 rounded-lg"
                   whileTap={press.whileTap}
                 >
-                  <span className="w-9 h-9 rounded-xl bg-tint-muted flex items-center justify-center text-base shrink-0">
-                    {getEmoji(ex.name)}
-                  </span>
+                  <ExerciseIcon muscleGroup={ex.muscle} size={36} darkMode={darkMode} />
                   <div>
                     <p className="font-semibold text-sm dark:text-white">{ex.name}</p>
                     <p className="text-xs text-gray-400">{ex.muscle}</p>
@@ -657,9 +644,7 @@ export default function CurrentWorkout() {
                         layout
                       >
                         <div className="bg-white dark:bg-[#161616] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] px-4 py-3.5 flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-tint-muted flex items-center justify-center text-lg shrink-0">
-                            {getEmoji(ex.name)}
-                          </div>
+                          <ExerciseIcon muscleGroup={getMuscleFromName(ex.name)} size={40} darkMode={darkMode} />
                           <p className="font-bold flex-1 text-[15px] dark:text-white">{ex.name}</p>
                           <button
                             onClick={() => removeExercise(ex.id)}
