@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { Bell, Play, ChevronRight, Flame } from 'lucide-react';
+import { Bell, Play, ChevronRight, Flame, Dumbbell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HomeScreenSkeleton } from '@/components/Skeleton';
 import useStore from '@/store';
@@ -192,6 +192,19 @@ export default function Home() {
           <h1 className="text-[28px] font-black leading-tight tracking-tight dark:text-white">
             {mode === 'guest' ? 'Welcome to Fitnex' : (firstName ?? 'there')}
           </h1>
+          {mode === 'authenticated' && profile?.quiz_goal && (() => {
+            const goalMessages: Record<string, string> = {
+              muscle: 'Time to build.',
+              lose: 'Every session counts.',
+              strength: 'Chase the PR.',
+              consistent: 'Show up today.',
+            };
+            return (
+              <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 2 }}>
+                {goalMessages[profile.quiz_goal] ?? "Let's get to work."}
+              </p>
+            );
+          })()}
         </div>
         <motion.button
           onClick={() => setShowNotifications(true)}
@@ -388,7 +401,7 @@ export default function Home() {
           {/* ── Empty state (authenticated, no workouts) ──── */}
           {!loading && isAuth && dbWorkouts.length === 0 && (
             <div style={{ textAlign: 'center', padding: '32px 20px' }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🏋️</div>
+              <div style={{ marginBottom: 12 }}><Dumbbell size={40} color="#d1d5db" /></div>
               <p style={{ fontWeight: 700, color: '#111', fontSize: 15, marginBottom: 6 }}>
                 No workouts yet
               </p>
@@ -401,7 +414,7 @@ export default function Home() {
           {/* ── Empty state (guest, no workouts) ──── */}
           {isGuest && storeWorkouts.length === 0 && (
             <div style={{ textAlign: 'center', padding: '32px 20px' }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🏋️</div>
+              <div style={{ marginBottom: 12 }}><Dumbbell size={40} color="#d1d5db" /></div>
               <p style={{ fontWeight: 700, color: '#111', fontSize: 15, marginBottom: 6 }}>
                 No workouts yet
               </p>

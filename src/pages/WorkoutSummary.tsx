@@ -199,7 +199,7 @@ export default function WorkoutSummary() {
 
           {/* Heading */}
           <h1 className="relative text-[26px] font-black text-white leading-tight mb-1">
-            Great session, {displayName}! 💪
+            Great session, {displayName}!
           </h1>
 
           {/* Subtext */}
@@ -353,7 +353,7 @@ export default function WorkoutSummary() {
 
             {exercises.length === 0 && (
               <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] py-10 flex flex-col items-center gap-2">
-                <p className="text-3xl">🏋️</p>
+                <Dumbbell size={32} color="#9ca3af" />
                 <p className="text-sm text-gray-400 font-medium">No exercises recorded</p>
               </div>
             )}

@@ -9,6 +9,7 @@ import SignUpScreen          from '@/pages/auth/SignUpScreen';
 import SignInScreen          from '@/pages/auth/SignInScreen';
 import ForgotPasswordScreen  from '@/pages/auth/ForgotPasswordScreen';
 import ResetPasswordScreen   from '@/pages/auth/ResetPasswordScreen';
+import OnboardingQuiz        from '@/components/OnboardingQuiz';
 import Home           from '@/pages/Home';
 import History        from '@/pages/History';
 import Stats          from '@/pages/Stats';
@@ -71,6 +72,7 @@ function AuthGate() {
   );
 
   if (mode === 'splash')          return <SplashScreen />;
+  if (mode === 'quiz')            return <OnboardingQuiz />;
   if (mode === 'signup')          return <SignUpScreen />;
   if (mode === 'signin')          return <SignInScreen />;
   if (mode === 'forgot-password') return <ForgotPasswordScreen />;
