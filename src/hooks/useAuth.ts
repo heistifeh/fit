@@ -13,23 +13,28 @@ import type { WeightUnit } from '@/utils/weight';
 // 'guest'         — bypassed auth, no Supabase user
 // 'authenticated' — valid Supabase session
 export type AuthMode =
-  | 'loading' | 'splash' | 'signup' | 'signin'
+  | 'loading' | 'splash' | 'quiz' | 'signup' | 'signin'
   | 'forgot-password' | 'reset-password'
   | 'guest' | 'authenticated';
 
 // Shape of the profile data we keep in memory
 export type ProfileData = {
-  name:            string;
-  handle:          string | null;
-  avatar_url:      string | null;
-  weight_unit:     WeightUnit;
-  rest_timer_secs: number;
-  dark_mode:       boolean;
-  reminders:       boolean;
-  weekly_goal:     number | null;
-  volume_goal:     number | null;
-  onboarding_done: boolean;
-  created_at:      string;
+  name:             string;
+  handle:           string | null;
+  avatar_url:       string | null;
+  weight_unit:      WeightUnit;
+  rest_timer_secs:  number;
+  dark_mode:        boolean;
+  reminders:        boolean;
+  weekly_goal:      number | null;
+  volume_goal:      number | null;
+  onboarding_done:  boolean;
+  created_at:       string;
+  quiz_goal:        string | null;
+  quiz_frequency:   string | null;
+  quiz_equipment:   string | null;
+  quiz_experience:  string | null;
+  quiz_challenge:   string | null;
 };
 
 // Preference sync callbacks — supplied by AuthProvider which sits inside
@@ -49,7 +54,7 @@ export const useAuth = (prefs: SyncPrefs) => {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('name, handle, avatar_url, weight_unit, rest_timer_secs, dark_mode, reminders, weekly_goal, volume_goal, onboarding_done, created_at')
+      .select('name, handle, avatar_url, weight_unit, rest_timer_secs, dark_mode, reminders, weekly_goal, volume_goal, onboarding_done, created_at, quiz_goal, quiz_frequency, quiz_equipment, quiz_experience, quiz_challenge')
       .eq('id', userId)
       .single();
 
@@ -120,10 +125,20 @@ export const useAuth = (prefs: SyncPrefs) => {
     });
     if (error) throw error;
     if (data.user) {
-      await supabase
-        .from('profiles')
-        .update({ name })
-        .eq('id', data.user.id);
+      const quizAnswers = JSON.parse(localStorage.getItem('fitnex_quiz_answers') ?? '{}');
+      const weeklyGoalMap: Record<string, number> = {
+        beginner: 2, casual: 3, dedicated: 5, daily: 6,
+      };
+      await supabase.from('profiles').update({
+        name,
+        quiz_goal:       quizAnswers.goal       ?? null,
+        quiz_frequency:  quizAnswers.frequency  ?? null,
+        quiz_equipment:  quizAnswers.equipment  ?? null,
+        quiz_experience: quizAnswers.experience ?? null,
+        quiz_challenge:  quizAnswers.challenge  ?? null,
+        weekly_goal:     weeklyGoalMap[quizAnswers.frequency] ?? 5,
+      }).eq('id', data.user.id);
+      localStorage.removeItem('fitnex_quiz_answers');
     }
   };
 

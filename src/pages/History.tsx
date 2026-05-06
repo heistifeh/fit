@@ -148,7 +148,7 @@ function storeWorkoutToEntry(
         return { set_number: i + 1, weight_kg: kg, reps, is_completed: true, is_pr: isPR };
       });
       const total_volume = sets.reduce((a, s) => a + s.weight_kg * s.reps, 0);
-      return { id: ex.id, name: ex.name, emoji: '🏋️', total_volume, sets };
+      return { id: ex.id, name: ex.name, emoji: '', total_volume, sets };
     })
     .filter((ex) => ex.sets.length > 0);
 
@@ -552,7 +552,7 @@ export default function History() {
             variants={staggerChild}
             className="bg-white rounded-2xl border border-[#f0f0f0] py-14 flex flex-col items-center gap-2"
           >
-            <p className="text-4xl">🏋️</p>
+            <Dumbbell size={36} color="#9ca3af" />
             <p className="font-bold text-gray-700 mt-1">No workouts yet</p>
             <p className="text-sm text-gray-400">Complete your first workout to see history</p>
           </motion.div>

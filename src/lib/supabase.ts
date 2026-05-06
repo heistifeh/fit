@@ -25,6 +25,11 @@ export type Profile = {
   onboarding_done:  boolean;
   created_at:       string;
   updated_at:       string;
+  quiz_goal:        string | null;
+  quiz_frequency:   string | null;
+  quiz_equipment:   string | null;
+  quiz_experience:  string | null;
+  quiz_challenge:   string | null;
 };
 
 export type Exercise = {

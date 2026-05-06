@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
-  X, Clock, Pause, Play, Plus, MoreVertical, Check,
+  X, Clock, Pause, Play, Plus, MoreVertical, Check, Dumbbell,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import dayjs from 'dayjs';
@@ -617,7 +617,7 @@ export default function CurrentWorkout() {
               {!hasExercises ? (
                 /* Empty state — centered */
                 <div className="flex-1 flex flex-col items-center justify-center gap-5 py-12">
-                  <div style={{ fontSize: 52 }}>🏋️</div>
+                  <Dumbbell size={52} color="#d1d5db" />
                   <div className="text-center">
                     <p className="font-bold text-[17px] dark:text-white mb-1">Add your first exercise</p>
                     <p className="text-sm text-gray-400">Search from 51 exercises or create your own</p>
@@ -756,7 +756,7 @@ export default function CurrentWorkout() {
 
                 {currentWorkout.exercises.length === 0 ? (
                   <div className="bg-white dark:bg-[#161616] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] py-14 flex flex-col items-center gap-2">
-                    <p className="text-3xl">🏋️</p>
+                    <Dumbbell size={32} color="#9ca3af" />
                     <p className="font-semibold text-gray-500 dark:text-[#888] text-sm mt-1">No exercises</p>
                     <p className="text-xs text-gray-400 dark:text-[#555]">Tap "Add exercise" to continue</p>
                   </div>

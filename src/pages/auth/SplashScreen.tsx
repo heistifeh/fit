@@ -88,7 +88,7 @@ function SplashDesktop({ setMode, continueAsGuest }: { setMode: (m: AuthMode) =>
         {/* Buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <button
-            onClick={() => setMode('signup')}
+            onClick={() => setMode('quiz')}
             style={{ width: '100%', background: '#10B981', color: '#fff', fontWeight: 800, fontSize: 16, padding: '17px 0', borderRadius: 16, border: 'none', cursor: 'pointer' }}
           >
             Create free account
@@ -262,7 +262,7 @@ export default function SplashScreen() {
             {/* Create account */}
             <motion.button
               variants={buttonChild}
-              onClick={() => setMode('signup')}
+              onClick={() => setMode('quiz')}
               whileTap={{ scale: 0.97 }}
               style={{
                 width: '100%',

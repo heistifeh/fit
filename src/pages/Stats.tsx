@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dumbbell, Calendar, Clock, Flame } from 'lucide-react';
+import { Dumbbell, Calendar, Clock, Flame, Trophy } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -438,7 +438,7 @@ export default function Stats() {
               {/* Auth PRs */}
               {mode === 'authenticated' && dbPRs.length === 0 && !loading && (
                 <div className="bg-white rounded-2xl border border-[#f0f0f0] py-10 flex flex-col items-center gap-2">
-                  <p className="text-3xl">🏆</p>
+                  <Trophy size={32} color="#d1d5db" />
                   <p className="text-sm text-gray-400 font-medium">No personal records yet</p>
                 </div>
               )}
@@ -496,7 +496,7 @@ export default function Stats() {
 
                 {mode !== 'authenticated' && guestPRs.length === 0 && (
                   <div className="bg-white rounded-2xl border border-[#f0f0f0] py-10 flex flex-col items-center gap-2">
-                    <p className="text-3xl">🏆</p>
+                    <Trophy size={32} color="#d1d5db" />
                     <p className="text-sm text-gray-400 font-medium">No personal records yet</p>
                   </div>
                 )}
