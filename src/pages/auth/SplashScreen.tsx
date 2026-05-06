@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuthContext } from '@/context/AuthContext';
 import { SPRING } from '@/animations/fitnex.variants';
-import splashHero from '@/assets/images/splash-hero.png';
+import splashHero from '@/assets/images/splash-hero.webp';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { AuthMode } from '@/hooks/useAuth';
 
@@ -118,9 +119,25 @@ function SplashDesktop({ setMode, continueAsGuest }: { setMode: (m: AuthMode) =>
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+const QUIZ_IMAGE_URLS = [
+  '/quiz/quiz-goal.png',
+  '/quiz/quiz-frequency.png',
+  '/quiz/quiz-equipment.png',
+  '/quiz/quiz-experience.png',
+  '/quiz/quiz-challenge.png',
+  '/quiz/quiz-result.png',
+];
+
 export default function SplashScreen() {
   const { setMode, continueAsGuest } = useAuthContext();
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+
+  useEffect(() => {
+    QUIZ_IMAGE_URLS.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
 
   if (isDesktop) {
     return <SplashDesktop setMode={setMode} continueAsGuest={continueAsGuest} />;

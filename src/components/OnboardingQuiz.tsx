@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Check } from 'lucide-react';
 import { useAuthContext } from '@/context/AuthContext';
@@ -183,20 +183,29 @@ function Options({
 
 // ─── Mobile slide background ──────────────────────────────────────────────────
 
-function SlideBackground({ image }: { image: string }) {
+function SlideBackground({ image, loaded, onLoad }: { image: string; loaded: boolean; onLoad: () => void }) {
   return (
     <>
-      <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: `url(${image})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center top',
-        zIndex: 0,
-      }} />
+      {/* Instant dark base — always visible */}
+      <div style={{ position: 'absolute', inset: 0, background: '#080808', zIndex: 0 }} />
+      {/* Image fades in once loaded */}
+      <img
+        src={image}
+        decoding="async"
+        onLoad={onLoad}
+        style={{
+          position: 'absolute', inset: 0,
+          width: '100%', height: '100%',
+          objectFit: 'cover', objectPosition: 'center top',
+          opacity: loaded ? 1 : 0,
+          transition: 'opacity 0.4s ease',
+          zIndex: 1,
+        }}
+      />
       <div style={{
         position: 'absolute', inset: 0,
         background: 'linear-gradient(to bottom, #080808 0%, rgba(8,8,8,0.5) 30%, rgba(8,8,8,0.3) 50%, rgba(8,8,8,0.8) 70%, #080808 90%)',
-        zIndex: 1,
+        zIndex: 2,
       }} />
     </>
   );
@@ -204,12 +213,25 @@ function SlideBackground({ image }: { image: string }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+const RESULT_INDEX = QUIZ_STEPS.length;
+
 const OnboardingQuiz = () => {
   const { setMode } = useAuthContext();
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showResult, setShowResult] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    [currentStep, currentStep + 1].forEach((index) => {
+      if (index < 0 || index > RESULT_INDEX) return;
+      const src = index === RESULT_INDEX ? '/quiz/quiz-result.png' : QUIZ_STEPS[index].image;
+      const img = new Image();
+      img.src = src;
+      img.onload = () => setImageLoaded((prev) => ({ ...prev, [index]: true }));
+    });
+  }, [currentStep]);
 
   const step = QUIZ_STEPS[currentStep];
 
@@ -322,7 +344,11 @@ const OnboardingQuiz = () => {
           display: 'flex', flexDirection: 'column', overflow: 'hidden', fontFamily: font,
         }}
       >
-        <SlideBackground image="/quiz/quiz-result.png" />
+        <SlideBackground
+        image="/quiz/quiz-result.png"
+        loaded={imageLoaded[RESULT_INDEX] ?? false}
+        onLoad={() => setImageLoaded((prev) => ({ ...prev, [RESULT_INDEX]: true }))}
+      />
 
         <div style={{ position: 'relative', zIndex: 2, padding: '52px 20px 0' }}>
           <button
@@ -481,7 +507,11 @@ const OnboardingQuiz = () => {
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}
         >
-          <SlideBackground image={step.image} />
+          <SlideBackground
+            image={step.image}
+            loaded={imageLoaded[currentStep] ?? false}
+            onLoad={() => setImageLoaded((prev) => ({ ...prev, [currentStep]: true }))}
+          />
 
           {/* Header */}
           <div style={{ position: 'relative', zIndex: 2, padding: '52px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
