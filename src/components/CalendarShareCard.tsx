@@ -225,13 +225,13 @@ function CalendarCard({
         </div>
       </div>
 
-      {/* ── Streak hero ─────────────────────────────────────────────────── */}
+      {/* ── Active days hero ─────────────────────────────────────────────── */}
       <div style={{ padding: '16px 24px 0', display: 'flex', alignItems: 'baseline', gap: 8 }}>
         <Flame size={32} color="#f97316" fill="#f97316" style={{ alignSelf: 'center' }} />
         <span style={{ color: '#fff', fontSize: 52, fontWeight: 900, letterSpacing: '-2px', lineHeight: 1 }}>
-          {streak}
+          {workoutDays.size}
         </span>
-        <span style={{ color: '#ffffff55', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>day streak</span>
+        <span style={{ color: '#ffffff55', fontSize: 14, fontWeight: 600, marginBottom: 4 }}>days this month</span>
       </div>
 
       {/* ── Calendar grid ───────────────────────────────────────────────── */}
@@ -401,7 +401,7 @@ export default function CalendarShareCard({ onClose, workouts, streak }: Calenda
 
   const buildCaption = () => [
     `not missing days 📅`,
-    `${streak} day streak on fitnex`,
+    `${workoutDaysCount} active days this month on fitnex`,
     `${workoutDaysCount} sessions this month · top ${weeklyRankPct}% volume this week`,
     `the app shows your rank so you actually know if you're built different`,
     ``,
