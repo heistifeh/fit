@@ -568,7 +568,6 @@ export default function CurrentWorkout() {
                 placeholder="Search exercises..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                autoFocus
                 className="w-full py-3 px-4 bg-gray-100 dark:bg-[#222] text-gray-900 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-tint placeholder:text-gray-400 dark:placeholder:text-[#555]"
               />
             </div>
