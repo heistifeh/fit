@@ -63,8 +63,11 @@ function BgOption({
   children?: React.ReactNode;
 }) {
   return (
-    <motion.button
+    <motion.div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
       whileTap={press.whileTap}
       style={{
         width: 56, height: 56,
@@ -77,11 +80,12 @@ function BgOption({
         alignItems: 'center',
         justifyContent: 'center',
         transition: 'border-color 0.2s',
+        cursor: 'pointer',
         ...style,
       }}
     >
       {children}
-    </motion.button>
+    </motion.div>
   );
 }
 
@@ -353,9 +357,9 @@ export default function CalendarShareCard({ onClose, workouts, streak }: Calenda
 
   useEffect(() => { setDisplayHandle(profile?.handle ?? ''); }, [profile?.handle]);
 
-  // Revoke photo object URL on unmount
+  // Only revoke blob URLs — base64 data URLs don't need (or support) revocation
   useEffect(() => {
-    return () => { if (bgPhotoUrl) URL.revokeObjectURL(bgPhotoUrl); };
+    return () => { if (bgPhotoUrl?.startsWith('blob:')) URL.revokeObjectURL(bgPhotoUrl); };
   }, [bgPhotoUrl]);
 
   const displayName = profile?.name || user?.user_metadata?.name || 'Lifter';
@@ -371,11 +375,11 @@ export default function CalendarShareCard({ onClose, workouts, streak }: Calenda
     if (!cardRef.current) throw new Error('No card ref');
     return html2canvas(cardRef.current, {
       scale: 3,
-      backgroundColor: '#080808',
-      useCORS: bgType !== 'photo',
-      allowTaint: bgType === 'photo',
-      imageTimeout: 8000,
+      backgroundColor: null,
+      useCORS: true,
+      allowTaint: false,
       logging: false,
+      imageTimeout: 0,
     });
   };
 
@@ -494,9 +498,12 @@ export default function CalendarShareCard({ onClose, workouts, streak }: Calenda
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (bgPhotoUrl) URL.revokeObjectURL(bgPhotoUrl);
-    setBgPhotoUrl(URL.createObjectURL(file));
-    setBgType('photo');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setBgPhotoUrl(event.target?.result as string); // base64 — avoids Safari/Chrome blob URL failures in html2canvas
+      setBgType('photo');
+    };
+    reader.readAsDataURL(file);
     e.target.value = '';
   };
 
@@ -511,7 +518,7 @@ export default function CalendarShareCard({ onClose, workouts, streak }: Calenda
 
   const removePhoto = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (bgPhotoUrl) URL.revokeObjectURL(bgPhotoUrl);
+    if (bgPhotoUrl?.startsWith('blob:')) URL.revokeObjectURL(bgPhotoUrl);
     setBgPhotoUrl(null);
     setBgType('dark');
   };

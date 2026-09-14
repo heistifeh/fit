@@ -46,9 +46,12 @@ export function GuestNudgeBanner({ showBanner }: GuestNudgeBannerProps) {
     <>
       {/* ── Compact top banner ─────────────────────────────────────────── */}
       {showBanner && (
-        <motion.button
-          className="w-full flex items-center justify-between px-5 py-3 bg-gray-50 border-b border-gray-100 text-left"
+        <motion.div
+          role="button"
+          tabIndex={0}
+          className="w-full flex items-center justify-between px-5 py-3 bg-gray-50 border-b border-gray-100 text-left cursor-pointer"
           onClick={() => setShowSheet(true)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowSheet(true); }}
           whileTap={{ opacity: 0.7 }}
         >
           {/* Left: avatar + text */}
@@ -74,7 +77,7 @@ export function GuestNudgeBanner({ showBanner }: GuestNudgeBannerProps) {
               Guest
             </span>
           </div>
-        </motion.button>
+        </motion.div>
       )}
 
       {/* ── Bottom sheet nudge ─────────────────────────────────────────── */}

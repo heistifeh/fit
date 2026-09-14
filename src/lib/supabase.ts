@@ -1,6 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import isoWeek from 'dayjs/plugin/isoWeek';
 import { calculate1RM } from '@/services/setService';
+
+dayjs.extend(utc);
+dayjs.extend(isoWeek);
 
 // ─── Client ───────────────────────────────────────────────────────────────────
 
@@ -303,8 +308,8 @@ export async function getPersonalRecords(
 // Returns 0 if no workouts this week.
 
 export async function getWeeklyVolume(userId: string): Promise<number> {
-  const weekStart = dayjs().startOf('week').toISOString();
-  const weekEnd   = dayjs().endOf('week').toISOString();
+  const weekStart = dayjs.utc().startOf('isoWeek').toISOString();
+  const weekEnd   = dayjs.utc().endOf('isoWeek').toISOString();
 
   const { data, error } = await supabase
     .from('workouts')

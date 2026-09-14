@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import useStore from '@/store';
-import { getWorkoutById, type WorkoutWithExercisesAndSets } from '@/lib/supabase';
+import { getWorkoutById, getWorkouts, type WorkoutWithExercisesAndSets } from '@/lib/supabase';
 import { type WorkoutWithExercises } from '@/types/models';
+import { useAuthContext } from '@/context/AuthContext';
+import { calculateStreak } from '@/utils/streak';
 import WorkoutDetailScreen, {
   type WorkoutDetail,
   type DetailExercise,
@@ -124,10 +126,23 @@ export default function WorkoutDetail() {
   const navigate    = useNavigate();
   const storeWorkout   = useStore((s) => s.workouts.find((w) => w.id === id));
   const allWorkouts    = useStore((s) => s.workouts);
+  const { mode, user } = useAuthContext();
 
   const [detail,  setDetail]  = useState<WorkoutDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(false);
+  const [streak,  setStreak]  = useState(0);
+
+  useEffect(() => {
+    if (mode === 'authenticated' && user) {
+      getWorkouts(user.id).then((dbWorkouts) => {
+        setStreak(calculateStreak(dbWorkouts.map((w) => w.started_at)));
+      }).catch(console.error);
+    } else {
+      setStreak(calculateStreak(allWorkouts.map((w) => w.createdAt.toISOString())));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, user]);
 
   useEffect(() => {
     if (!id) { setError(true); setLoading(false); return; }
@@ -169,5 +184,5 @@ export default function WorkoutDetail() {
     );
   }
 
-  return <WorkoutDetailScreen workout={detail} onBack={() => navigate(-1)} />;
+  return <WorkoutDetailScreen workout={detail} onBack={() => navigate(-1)} streak={streak} />;
 }

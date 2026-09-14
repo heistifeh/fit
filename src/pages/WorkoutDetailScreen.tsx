@@ -158,9 +158,10 @@ function ExerciseCard({
 type Props = {
   workout: WorkoutDetail;
   onBack: () => void;
+  streak?: number;
 };
 
-export default function WorkoutDetailScreen({ workout, onBack }: Props) {
+export default function WorkoutDetailScreen({ workout, onBack, streak = 0 }: Props) {
   const [showShareCard, setShowShareCard] = useState(false);
   const { weightUnit, darkMode } = usePreferences();
   const { mode, profile } = useAuthContext();
@@ -335,7 +336,7 @@ export default function WorkoutDetailScreen({ workout, onBack }: Props) {
             durationMinutes={durationMins}
             totalVolume={workout.total_volume_kg}
             totalSets={workout.total_sets}
-            streak={12}
+            streak={streak}
             hasPR={hasPRFromSets || workout.hasPR}
             prExercise={prSet?.exerciseName ?? workout.prExercise ?? ''}
             prKg={prSet?.weight_kg ?? workout.prKg ?? 0}

@@ -19,6 +19,7 @@ import { useAuthContext } from '@/context/AuthContext';
 import useStore from '@/store';
 import { getWorkouts, type WorkoutWithExercisesAndSets } from '@/lib/supabase';
 import { type WorkoutWithExercises } from '@/types/models';
+import { calculateStreak } from '@/utils/streak';
 
 dayjs.extend(isoWeek);
 
@@ -187,18 +188,6 @@ const fmtDuration = (s: number) => {
   const m = Math.floor(s / 60);
   return m > 0 ? `${m}m` : `${s}s`;
 };
-
-function computeStreak(isoDates: string[]): number {
-  if (!isoDates.length) return 0;
-  const workoutDays = new Set(isoDates.map((d) => dayjs(d).format('YYYY-MM-DD')));
-  let streak = 0;
-  let cursor = dayjs();
-  while (workoutDays.has(cursor.format('YYYY-MM-DD'))) {
-    streak++;
-    cursor = cursor.subtract(1, 'day');
-  }
-  return streak;
-}
 
 // ─── Heatmap ──────────────────────────────────────────────────────────────────
 
@@ -412,7 +401,7 @@ export default function History() {
   const monthLabel   = today.format('MMMM YYYY');
   const thisMonthEntries = allEntries.filter((e) => dayjs(e.isoDate).isSame(today, 'month'));
   const monthVol     = thisMonthEntries.reduce((a, e) => a + e.detail.total_volume_kg, 0);
-  const streak       = computeStreak(allEntries.map((e) => e.isoDate));
+  const streak       = calculateStreak(allEntries.map((e) => e.isoDate));
   const workoutIsoDates = allEntries.map((e) => e.isoDate);
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -601,6 +590,7 @@ export default function History() {
           key={selectedEntry.detail.id}
           workout={selectedEntry.detail}
           onBack={() => setSelectedEntry(null)}
+          streak={streak}
         />
       )}
     </AnimatePresence>

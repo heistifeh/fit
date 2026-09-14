@@ -308,6 +308,14 @@ export default function CurrentWorkout() {
   const [dbStreak,     setDbStreak]     = useState(0);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  // Guards against a double-tap on a picker row adding the same exercise twice
+  // while the sheet's exit animation is still playing.
+  const addingExerciseRef = useRef(false);
+
+  // Reset the double-tap guard whenever the add-exercise sheet is (re)opened
+  useEffect(() => {
+    if (addExOpen) addingExerciseRef.current = false;
+  }, [addExOpen]);
 
   // Main timer — only runs when isRunning (set to true on Begin session)
   useEffect(() => {
@@ -335,11 +343,12 @@ export default function CurrentWorkout() {
 
   // Previous values + streak from Supabase (authenticated users)
   const [dbPreviousMap, setDbPreviousMap] = useState<Record<string, PrevData>>({});
+  const [dbWorkouts, setDbWorkouts] = useState<Awaited<ReturnType<typeof getWorkouts>>>([]);
   useEffect(() => {
     if (mode !== 'authenticated' || !user) return;
-    getWorkouts(user.id).then((dbWorkouts) => {
+    getWorkouts(user.id).then((fetched) => {
       const map: Record<string, PrevData> = {};
-      for (const w of dbWorkouts) {
+      for (const w of fetched) {
         for (const ex of w.exercises) {
           if (!(ex.name in map)) {
             const last = [...ex.sets].reverse().find((s) => s.weight_kg && s.reps);
@@ -348,7 +357,8 @@ export default function CurrentWorkout() {
         }
       }
       setDbPreviousMap(map);
-      setDbStreak(calculateStreak(dbWorkouts.map((w) => w.started_at)));
+      setDbWorkouts(fetched);
+      setDbStreak(calculateStreak(fetched.map((w) => w.started_at)));
     }).catch(console.error);
   }, [mode, user]);
 
@@ -361,8 +371,9 @@ export default function CurrentWorkout() {
   const handleClose = () => {
     if (phase === 'setup') {
       // Nothing logged yet — go straight home and discard
+      const idAtClose = currentWorkout.id;
       navigate('/');
-      setTimeout(() => discardWorkout(), 300);
+      setTimeout(() => discardWorkout(idAtClose), 300);
     } else {
       // Active phase — confirm before discarding
       setShowDiscardSheet(true);
@@ -412,10 +423,15 @@ export default function CurrentWorkout() {
 
   const buildSummaryState = () => {
     const summaryExercises = currentWorkout.exercises.map((ex) => {
-      const historyWeights = workouts
-        .flatMap((w) => w.exercises)
-        .filter((e) => e.name === ex.name)
-        .flatMap((e) => e.sets.map((s) => s.weight ?? 0));
+      const historyWeights = mode === 'authenticated'
+        ? dbWorkouts
+            .flatMap((w) => w.exercises)
+            .filter((e) => e.name === ex.name)
+            .flatMap((e) => e.sets.map((s) => s.weight_kg ?? 0))
+        : workouts
+            .flatMap((w) => w.exercises)
+            .filter((e) => e.name === ex.name)
+            .flatMap((e) => e.sets.map((s) => s.weight ?? 0));
       const prevBest = historyWeights.length ? Math.max(...historyWeights) : 0;
 
       return {
@@ -469,10 +485,11 @@ export default function CurrentWorkout() {
   };
 
   const handleDiscardFromSheet = () => {
+    const idAtDiscard = currentWorkout.id;
     setShowFinishSheet(false);
     setShowDiscardSheet(false);
     navigate('/');
-    setTimeout(() => discardWorkout(), 300);
+    setTimeout(() => discardWorkout(idAtDiscard), 300);
   };
 
   const filtered = exerciseList.filter((e) =>
@@ -569,7 +586,13 @@ export default function CurrentWorkout() {
                 <motion.button
                   key={ex.name}
                   variants={staggerChild}
-                  onClick={() => { addExercise(ex.name); setAddExOpen(false); setSearch(''); }}
+                  onClick={() => {
+                    if (addingExerciseRef.current) return;
+                    addingExerciseRef.current = true;
+                    addExercise(ex.name);
+                    setAddExOpen(false);
+                    setSearch('');
+                  }}
                   className="w-full text-left flex items-center gap-3 py-3 border-b border-gray-50 dark:border-[#222] last:border-0 rounded-lg"
                   whileTap={press.whileTap}
                 >

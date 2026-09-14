@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Check } from 'lucide-react';
 import { useAuthContext } from '@/context/AuthContext';
@@ -222,6 +222,9 @@ const OnboardingQuiz = () => {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showResult, setShowResult] = useState(false);
   const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
+  const autoAdvanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => () => clearTimeout(autoAdvanceTimeoutRef.current), []);
 
   useEffect(() => {
     [currentStep, currentStep + 1].forEach((index) => {
@@ -241,7 +244,7 @@ const OnboardingQuiz = () => {
     localStorage.setItem('fitnex_quiz_answers', JSON.stringify(updated));
     const s = QUIZ_STEPS.find((q) => q.id === stepId);
     if (s && 'autoAdvance' in s && s.autoAdvance) {
-      setTimeout(() => setShowResult(true), 400);
+      autoAdvanceTimeoutRef.current = setTimeout(() => setShowResult(true), 400);
     }
   };
 
@@ -254,6 +257,7 @@ const OnboardingQuiz = () => {
   };
 
   const handleBack = () => {
+    clearTimeout(autoAdvanceTimeoutRef.current);
     if (showResult) {
       setShowResult(false);
     } else if (currentStep > 0) {

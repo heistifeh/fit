@@ -109,24 +109,13 @@ useEffect(() => {
 
 ## Known issues / tech debt
 
-- 1RM formula breaks if reps >= 37 (Brzycki division by zero)
-- Streak calculation duplicated across Home, Profile, Stats, CurrentWorkout
+- 1RM formula breaks if reps >= 37 (Brzycki division by zero) — guarded with a null return in `setService.ts`, not actually fixed
 - Long files: Profile (~1149 lines), CurrentWorkout (~995 lines)
 - Guest workouts not migrated to cloud on signup
 
 ## Pending work (last left off)
 
-### 1. Fix photo background export (BOTH files) — NOT YET DONE
-Apply the base64 fix described above to:
-- `src/components/general/WorkoutShareCard.tsx`
-- `src/components/CalendarShareCard.tsx`
-
-### 2. WorkoutSummary desktop layout — NOT YET DONE
-File: `src/pages/WorkoutSummary.tsx`
-- Wrap content in the standard desktop centering pattern (`maxWidth: 680`)
-- Exercise list → 2-column grid on desktop: `gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr'`
-- PR banner dark mode: `background: darkMode ? '#2d1500' : '#fef3c7'`, `border: darkMode ? '#92400e' : '#fde68a'`
-- Exercise icons: pass `muscleGroup={exercise.muscle_group}` (snake_case from DB), not `exercise.muscleGroup`
+Photo background export fix and WorkoutSummary desktop layout are DONE (see git history). Nothing currently pending.
 
 ## Build
 

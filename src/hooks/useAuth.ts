@@ -151,10 +151,14 @@ export const useAuth = (prefs: SyncPrefs) => {
         .from('profiles')
         .upsert(payload, { onConflict: 'id' });
 
-      if (upsertError) console.error('[Fitnex] Profile upsert error:', upsertError);
-      else console.log('[Fitnex] Profile upserted successfully, quiz saved:', hasQuizAnswers);
-
-      localStorage.removeItem('fitnex_quiz_answers');
+      if (upsertError) {
+        console.error('[Fitnex] Profile upsert error:', upsertError);
+        // Keep fitnex_quiz_answers in localStorage so a future retry (e.g. after
+        // email confirmation) can still upsert the quiz answers.
+      } else {
+        console.log('[Fitnex] Profile upserted successfully, quiz saved:', hasQuizAnswers);
+        localStorage.removeItem('fitnex_quiz_answers');
+      }
     }
   };
 

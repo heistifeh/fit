@@ -57,9 +57,12 @@ function SettingsRow({
   iconBg, icon, label, sublabel, rightValue, rightElement, onClick, danger,
 }: SettingsRowProps) {
   return (
-    <motion.button
+    <motion.div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
+      className="w-full flex items-center gap-3 px-4 py-3.5 text-left cursor-pointer"
       whileTap={press.whileTap}
     >
       <div
@@ -86,7 +89,7 @@ function SettingsRow({
           {!danger && <ChevronRight size={16} className="text-gray-300 dark:text-[#333]" />}
         </div>
       )}
-    </motion.button>
+    </motion.div>
   );
 }
 

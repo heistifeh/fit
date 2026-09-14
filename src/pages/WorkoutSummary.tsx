@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import useStore from '@/store';
 import { useAuthContext } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
-import { saveWorkout, updatePersonalRecords } from '@/lib/supabase';
+import { getWorkouts, saveWorkout, updatePersonalRecords } from '@/lib/supabase';
 import { calculate1RM } from '@/services/setService';
 import {
   Clock, Dumbbell, CheckSquare, Share2, Check, Save, Trophy,
@@ -98,9 +99,36 @@ export default function WorkoutSummary() {
 
   const endWorkout     = useStore((s) => s.endWorkout);
   const discardWorkout = useStore((s) => s.discardWorkout);
+  const workouts        = useStore((s) => s.workouts);
   const { mode, profile, user } = useAuthContext();
   const { darkMode } = usePreferences();
+  const isDesktop = useMediaQuery('(min-width: 768px)');
   const displayName = mode === 'guest' ? 'Lifter' : (profile?.name || 'You');
+
+  // Rolling 7-day volume (prior history + this just-finished session), used for
+  // the "volume rank this week" share-card stat — not the same as totalVolume,
+  // which is this session's volume alone.
+  const [priorWeeklyVolume, setPriorWeeklyVolume] = useState(0);
+  useEffect(() => {
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    if (mode === 'authenticated' && user) {
+      getWorkouts(user.id).then((dbWorkouts) => {
+        const sum = dbWorkouts
+          .filter((w) => new Date(w.started_at).getTime() >= weekAgo && w.finished_at !== null)
+          .reduce((acc, w) => acc + (Number(w.total_volume_kg) || 0), 0);
+        setPriorWeeklyVolume(sum);
+      }).catch(console.error);
+    } else {
+      const sum = workouts
+        .filter((w) => w.createdAt.getTime() >= weekAgo && w.finishedAt !== null)
+        .reduce((acc, w) => acc + w.exercises.flatMap((e) => e.sets)
+          .reduce((s2, set) => s2 + (set.weight ?? 0) * (set.reps ?? 0), 0), 0);
+      setPriorWeeklyVolume(sum);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, user]);
+
+  const weeklyVolume = priorWeeklyVolume + totalVolume;
 
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleSave = async () => {
@@ -169,12 +197,18 @@ export default function WorkoutSummary() {
     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     <motion.div
       className="min-h-screen bg-[#f8f9fa] dark:bg-[#0a0a0a] overflow-y-auto pb-10"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: isDesktop ? 'center' : 'stretch',
+        padding: isDesktop ? '40px 24px' : '0',
+      }}
       variants={screenEnter}
       initial="initial"
       animate="animate"
       exit={{ opacity: 0, transition: { duration: 0.15 } }}
     >
-      <div className="mx-auto max-w-[390px]">
+      <div className="mx-auto" style={{ width: '100%', maxWidth: isDesktop ? 680 : 390 }}>
 
         {/* ── 1. Hero Banner ────────────────────────────────────────────────── */}
         <div className="relative bg-[#10B981] px-5 pt-14 pb-8 overflow-hidden">
@@ -278,8 +312,11 @@ export default function WorkoutSummary() {
               variants={prBurst}
               initial="initial"
               animate="animate"
-              className="rounded-2xl border border-amber-200 dark:border-amber-900/50 px-4 py-3.5 flex items-center gap-3"
-              style={{ background: darkMode ? '#2a1a00' : 'linear-gradient(135deg, #fef3c7, #fde68a)' }}
+              className="rounded-2xl px-4 py-3.5 flex items-center gap-3"
+              style={{
+                background: darkMode ? '#2d1500' : '#fef3c7',
+                border: `1px solid ${darkMode ? '#92400e' : '#fde68a'}`,
+              }}
             >
               <Trophy size={22} color="#92400e" fill="#92400e" className="shrink-0" />
               <div className="min-w-0">
@@ -299,7 +336,11 @@ export default function WorkoutSummary() {
           <p className="font-black text-[16px] mb-3 dark:text-white">Exercise Summary</p>
 
           <motion.div
-            className="flex flex-col gap-3"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr',
+              gap: 12,
+            }}
             variants={staggerContainer}
             initial="initial"
             animate="animate"
@@ -352,7 +393,10 @@ export default function WorkoutSummary() {
             ))}
 
             {exercises.length === 0 && (
-              <div className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] py-10 flex flex-col items-center gap-2">
+              <div
+                style={{ gridColumn: '1 / -1' }}
+                className="bg-white dark:bg-[#111] rounded-2xl border border-[#f0f0f0] dark:border-[#1a1a1a] py-10 flex flex-col items-center gap-2"
+              >
                 <Dumbbell size={32} color="#9ca3af" />
                 <p className="text-sm text-gray-400 font-medium">No exercises recorded</p>
               </div>
@@ -395,6 +439,7 @@ export default function WorkoutSummary() {
             date={date}
             durationMinutes={Math.round(durationSeconds / 60)}
             totalVolume={totalVolume}
+            weeklyVolume={weeklyVolume}
             totalSets={totalSets}
             streak={streak}
             hasPR={hasPR}

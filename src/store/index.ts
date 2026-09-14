@@ -14,7 +14,7 @@ type State = {
 type Actions = {
   startWorkout: () => void;
   endWorkout: () => void;
-  discardWorkout: () => void;
+  discardWorkout: (workoutId?: string) => void;
   addExercise: (name: string) => void;
   removeExercise: (exerciseId: string) => void;
   addSet: (exerciseId: string) => void;
@@ -59,8 +59,13 @@ const useStore = create<State & Actions>()(
         });
       },
 
-      discardWorkout: () => {
-        set({ currentWorkout: null });
+      discardWorkout: (workoutId) => {
+        // Guard against a deferred discard (scheduled to let an exit animation
+        // play) firing after the user has already started a new workout.
+        set((state) => {
+          if (workoutId !== undefined && state.currentWorkout?.id !== workoutId) return;
+          state.currentWorkout = null;
+        });
       },
 
       removeExercise: (exerciseId: string) => {
