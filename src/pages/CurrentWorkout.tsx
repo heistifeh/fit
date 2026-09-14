@@ -7,7 +7,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import dayjs from 'dayjs';
 import useStore from '@/store';
-import exerciseList from '@/data/exercises';
 import { ExerciseSet, ExerciseWithSets } from '@/types/models';
 import {
   screenEnter, staggerChild, staggerContainer, rowFlood,
@@ -280,7 +279,6 @@ export default function CurrentWorkout() {
   const navigate       = useNavigate();
   const currentWorkout  = useStore((s) => s.currentWorkout);
   const workouts        = useStore((s) => s.workouts);
-  const addExercise     = useStore((s) => s.addExercise);
   const removeExercise  = useStore((s) => s.removeExercise);
   const removeSet       = useStore((s) => s.removeSet);
   const discardWorkout  = useStore((s) => s.discardWorkout);
@@ -300,22 +298,12 @@ export default function CurrentWorkout() {
   const [restTimerContext, setRestTimerContext] = useState<{
     exerciseName: string; setNumber: number; nextSetNumber: number;
   } | null>(null);
-  const [addExOpen,    setAddExOpen]    = useState(false);
   const [showFinishSheet,  setShowFinishSheet]  = useState(false);
   const [showDiscardSheet, setShowDiscardSheet] = useState(false);
   const [showEmptyWarning, setShowEmptyWarning] = useState(false);
-  const [search,       setSearch]       = useState('');
   const [dbStreak,     setDbStreak]     = useState(0);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
-  // Guards against a double-tap on a picker row adding the same exercise twice
-  // while the sheet's exit animation is still playing.
-  const addingExerciseRef = useRef(false);
-
-  // Reset the double-tap guard whenever the add-exercise sheet is (re)opened
-  useEffect(() => {
-    if (addExOpen) addingExerciseRef.current = false;
-  }, [addExOpen]);
 
   // Main timer — only runs when isRunning (set to true on Begin session)
   useEffect(() => {
@@ -492,10 +480,6 @@ export default function CurrentWorkout() {
     setTimeout(() => discardWorkout(idAtDiscard), 300);
   };
 
-  const filtered = exerciseList.filter((e) =>
-    e.name.toLowerCase().includes(search.toLowerCase())
-  );
-
   const hasExercises = currentWorkout.exercises.length > 0;
 
   // ── Shared header ───────────────────────────────────────────────────────────
@@ -524,90 +508,6 @@ export default function CurrentWorkout() {
         </motion.button>
       </div>
     </header>
-  );
-
-  // ── Add exercise sheet (shared between both phases) ─────────────────────────
-
-  const addExSheet = (
-    <AnimatePresence>
-      {addExOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center">
-          <motion.div
-            className="absolute inset-0 bg-black/70"
-            variants={overlayFade}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            onClick={() => { setAddExOpen(false); setSearch(''); }}
-          />
-          <motion.div
-            className="relative bg-white dark:bg-[#161616] rounded-t-3xl sm:rounded-2xl w-full sm:w-11/12 sm:max-w-md flex flex-col overflow-hidden min-h-[75dvh] sm:min-h-0"
-            style={{ maxHeight: '88vh' }}
-            variants={sheetSlide}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <div style={{ width: 40, height: 5, borderRadius: 3, background: darkMode ? '#333' : '#e5e7eb' }} />
-            </div>
-
-            <div className="flex items-center justify-between px-5 py-4">
-              <p className="text-lg font-bold dark:text-white">Add exercise</p>
-              <button
-                onClick={() => { setAddExOpen(false); setSearch(''); }}
-                className="p-2 -mr-2 text-gray-400"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="px-5 pb-3">
-              <input
-                type="text"
-                placeholder="Search exercises..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full py-3 px-4 bg-gray-100 dark:bg-[#222] text-gray-900 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-tint placeholder:text-gray-400 dark:placeholder:text-[#555]"
-              />
-            </div>
-
-            <motion.div
-              className="overflow-y-auto flex-1 px-5 pb-8"
-              variants={staggerContainer}
-              initial="initial"
-              animate="animate"
-            >
-              {filtered.length === 0 && (
-                <p className="text-center text-gray-400 py-8">No exercises found</p>
-              )}
-              {filtered.map((ex) => (
-                <motion.button
-                  key={ex.name}
-                  variants={staggerChild}
-                  onClick={() => {
-                    if (addingExerciseRef.current) return;
-                    addingExerciseRef.current = true;
-                    addExercise(ex.name);
-                    setAddExOpen(false);
-                    setSearch('');
-                  }}
-                  className="w-full text-left flex items-center gap-3 py-3 border-b border-gray-50 dark:border-[#222] last:border-0 rounded-lg"
-                  whileTap={press.whileTap}
-                >
-                  <ExerciseIcon muscleGroup={ex.muscle} size={36} darkMode={darkMode} />
-                  <div>
-                    <p className="font-semibold text-sm dark:text-white">{ex.name}</p>
-                    <p className="text-xs text-gray-400">{ex.muscle}</p>
-                  </div>
-                </motion.button>
-              ))}
-            </motion.div>
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, background: `linear-gradient(to bottom, transparent, ${darkMode ? 'rgba(22,22,22,0.95)' : 'rgba(255,255,255,0.95)'})`, pointerEvents: 'none' }} />
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
   );
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -645,7 +545,7 @@ export default function CurrentWorkout() {
                     <p className="text-sm text-gray-400">Search from 51 exercises or create your own</p>
                   </div>
                   <motion.button
-                    onClick={() => setAddExOpen(true)}
+                    onClick={() => navigate('/workout/add-exercise')}
                     className="flex items-center gap-2 bg-tint text-white font-bold text-[15px] px-6 py-3.5 rounded-2xl shadow-[0_4px_16px_rgba(16,185,129,0.3)]"
                     whileTap={press.whileTap}
                   >
@@ -681,7 +581,7 @@ export default function CurrentWorkout() {
 
                   {/* Add more exercises button */}
                   <motion.button
-                    onClick={() => setAddExOpen(true)}
+                    onClick={() => navigate('/workout/add-exercise')}
                     className="flex items-center justify-center gap-2 border border-dashed border-gray-300 dark:border-[#333] text-gray-500 dark:text-[#666] font-semibold text-[14px] py-3.5 rounded-2xl"
                     whileTap={press.whileTap}
                   >
@@ -767,7 +667,7 @@ export default function CurrentWorkout() {
                 <div className="flex items-center justify-between mb-3">
                   <p className="font-bold text-[15px] dark:text-white">Exercises</p>
                   <motion.button
-                    onClick={() => setAddExOpen(true)}
+                    onClick={() => navigate('/workout/add-exercise')}
                     className="flex items-center gap-1.5 border border-gray-200 dark:border-[#2a2a2a] bg-white dark:bg-[#222] text-tint text-sm font-bold px-4 py-2 rounded-xl"
                     whileTap={press.whileTap}
                   >
@@ -996,9 +896,6 @@ export default function CurrentWorkout() {
           />
         )}
       </AnimatePresence>
-
-      {/* ── Add exercise sheet ────────────────────────────────────────────────── */}
-      {addExSheet}
 
     </motion.div>
   );

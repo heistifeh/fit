@@ -21,6 +21,7 @@ const Profile              = lazy(() => import('@/pages/Profile'));
 const CurrentWorkout       = lazy(() => import('@/pages/CurrentWorkout'));
 const WorkoutDetail        = lazy(() => import('@/pages/WorkoutDetail'));
 const WorkoutSummary       = lazy(() => import('@/pages/WorkoutSummary'));
+const AddExercise          = lazy(() => import('@/pages/AddExercise'));
 
 function RouteFallback() {
   return (
@@ -44,6 +45,7 @@ function AnimatedRoutes({ showGuestNudge }: { showGuestNudge: boolean }) {
           <Routes location={location} key={location.pathname}>
             {/* Full-screen — no Layout wrapper */}
             <Route path="/workout/summary" element={<ErrorBoundary><WorkoutSummary /></ErrorBoundary>} />
+            <Route path="/workout/add-exercise" element={<ErrorBoundary><AddExercise /></ErrorBoundary>} />
 
             <Route element={<Layout showGuestNudge={showGuestNudge} />}>
               <Route path="/"                element={<ErrorBoundary><Home /></ErrorBoundary>} />
